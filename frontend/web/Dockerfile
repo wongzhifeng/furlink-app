@@ -1,4 +1,4 @@
-# FurLink 前端Web应用 Dockerfile - 静态服务版
+# FurLink 前端Web应用 Dockerfile - 兼容版
 # 宠物紧急寻回平台前端服务 - Zeabur部署优化
 
 # 构建阶段
@@ -10,8 +10,8 @@ WORKDIR /app
 # 复制package文件
 COPY package*.json ./
 
-# 安装依赖
-RUN npm ci --only=production --no-audit --no-fund
+# 安装所有依赖（包括开发依赖，用于构建）
+RUN npm install --no-audit --no-fund
 
 # 复制源代码
 COPY . .
