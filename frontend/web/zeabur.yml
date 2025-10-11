@@ -1,24 +1,32 @@
-# Zeabur部署配置
-# FurLink Web前端 - 宠物紧急寻回平台
+# Zeabur资源优化配置
+# FurLink Web前端 - 免费版优化
 
-# 构建配置
-build: npm ci && npm run build
+# 构建配置 - 优化内存使用
+build: npm ci --only=production && npm run build
 
-# 启动配置  
+# 启动配置 - 轻量级预览服务器
 start: npm run preview
 
 # 端口配置
 port: 3000
 
-# 环境变量
+# 环境变量 - 生产优化
 NODE_ENV: production
 PORT: 3000
+
+# 内存优化
+NODE_OPTIONS: --max-old-space-size=400
 
 # 健康检查
 healthcheck: http://localhost:3000
 
-# 部署说明
-# 1. 选择Node.js环境
-# 2. 选择frontend/web目录
-# 3. 自动构建和部署
-# 4. 访问 https://your-project-name.zeabur.app
+# 免费版优化建议
+# 1. 内存限制512MB - 已优化构建配置
+# 2. CPU共享 - 使用轻量级预览服务器
+# 3. 带宽限制 - 压缩静态资源
+# 4. 构建时间 - 使用npm ci加速安装
+
+# 监控建议
+# - 定期检查内存使用情况
+# - 避免同时运行多个重型服务
+# - 优化代码减少资源消耗
