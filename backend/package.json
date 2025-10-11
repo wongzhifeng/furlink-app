@@ -1,82 +1,33 @@
 {
-  "name": "flulink-backend",
+  "name": "furlink-backend",
   "version": "1.0.0",
-  "description": "FluLink星尘共鸣版后端发牌手服务 - 云端开发模式",
+  "description": "FurLink 宠物紧急寻回平台后端服务",
   "type": "module",
   "main": "src/index.js",
   "scripts": {
     "start": "node --max-old-space-size=400 src/index.js",
     "dev": "nodemon src/index.js",
-    "build": "echo 'Build completed - 云端部署时自动构建'",
-    "test": "jest --coverage",
-    "test:watch": "jest --watch",
-    "test:ci": "jest --ci --coverage --watchAll=false",
-    "test:api": "echo '⚠️  本地不运行API测试，请在Zeabur云端测试'",
-    "test:mock": "echo '⚠️  本地不运行Mock服务器，请在Zeabur云端测试'",
-    "docs:serve": "swagger-ui-serve",
-    "docs:generate": "swagger-jsdoc -d src/config/swagger.js -o api-docs.json src/routes/*.js",
-    "lint": "eslint src/ --ext .js,.json",
-    "lint:fix": "eslint src/ --ext .js,.json --fix",
-    "format": "prettier --write src/",
-    "format:check": "prettier --check src/",
-    "security": "npm audit",
-    "security:fix": "npm audit fix",
-    "deps:check": "npm outdated",
-    "deps:update": "npm update",
-    "clean": "rm -rf node_modules package-lock.json && npm install",
-    "logs": "echo '⚠️  本地不运行服务，请在Zeabur查看日志'",
-    "health": "echo '⚠️  本地不运行服务，请访问 https://flulink-app.zeabur.app/api/health'",
-    "deploy": "echo '🚀 推送代码到Gitee即可自动部署到Zeabur'"
+    "test": "echo 'No tests specified'"
   },
   "keywords": [
-    "flulink",
-    "social",
-    "async",
-    "star-cluster",
-    "resonance",
+    "furlink",
+    "pet",
+    "emergency",
     "nodejs",
     "express",
-    "mongodb",
-    "zeabur",
-    "cloud-development"
+    "zeabur"
   ],
-  "author": "FluLink Team",
+  "author": "FurLink Team",
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.12.2",
-    "bcrypt": "^5.1.1",
-    "bcryptjs": "^3.0.2",
-    "compression": "^1.8.1",
+    "express": "^4.18.2",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "express-rate-limit": "^7.1.5",
-    "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.19.1",
-    "morgan": "^1.10.1",
-    "multer": "^2.0.2",
-    "redis": "^5.8.3",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "dotenv": "^17.2.3"
   },
   "devDependencies": {
-    "@apidevtools/swagger-parser": "^12.0.0",
-    "@types/node": "^24.7.0",
-    "eslint": "^9.37.0",
-    "jest": "^29.7.0",
-    "nodemon": "^3.1.10",
-    "prettier": "^3.6.2"
+    "nodemon": "^3.1.10"
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://gitee.com/hangzhou_thousand_army_wangzhifeng/flulink-app.git"
-  },
-  "homepage": "https://flulink-app.zeabur.app",
-  "bugs": {
-    "url": "https://gitee.com/hangzhou_thousand_army_wangzhifeng/flulink-app/issues"
   }
 }

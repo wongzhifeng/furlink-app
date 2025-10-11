@@ -1,21 +1,9 @@
-// FurLink 后端主入口文件 - 简化版本
+// FurLink 后端主入口文件 - 极简测试版本
 // 宠物紧急寻回平台 - 云端开发模式
 
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
-import compression from 'compression';
-import morgan from 'morgan';
 import dotenv from 'dotenv';
-
-// 导入路由
-import emergencyRoutes from './routes/emergency.js';
-import petsRoutes from './routes/pets.js';
-import servicesRoutes from './routes/services.js';
-
-// 导入中间件
-import { errorHandler } from './middleware/errorHandler.js';
-import { accessControl } from './middleware/accessControl.js';
 
 // 加载环境变量
 dotenv.config();
@@ -24,24 +12,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // 基础中间件
-app.use(helmet());
-app.use(compression());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  credentials: true
-}));
-
-// 日志中间件
-if (process.env.NODE_ENV !== 'test') {
-  app.use(morgan('combined'));
-}
-
-// 解析中间件
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// 访问控制
-app.use(accessControl);
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // 健康检查端点
 app.get('/api/health', (req, res) => {
@@ -50,16 +23,11 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     memory: process.memoryUsage(),
-    version: process.env.npm_package_version || '1.0.0',
+    version: '1.0.0',
     environment: process.env.NODE_ENV || 'development',
     port: PORT
   });
 });
-
-// API路由
-app.use('/api/emergency', emergencyRoutes);
-app.use('/api/pets', petsRoutes);
-app.use('/api/services', servicesRoutes);
 
 // 根路径
 app.get('/', (req, res) => {
@@ -69,10 +37,7 @@ app.get('/', (req, res) => {
     status: 'running',
     port: PORT,
     endpoints: {
-      health: '/api/health',
-      emergency: '/api/emergency',
-      pets: '/api/pets',
-      services: '/api/services'
+      health: '/api/health'
     }
   });
 });
@@ -87,7 +52,14 @@ app.use('*', (req, res) => {
 });
 
 // 错误处理中间件
-app.use(errorHandler);
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({
+    success: false,
+    message: err.message || '服务器内部错误',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // 启动服务器
 function startServer() {
