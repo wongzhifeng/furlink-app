@@ -1,0 +1,32 @@
+# Zeabur项目配置
+# FurLink 宠物紧急寻回平台
+
+# 后端服务配置
+services:
+  backend:
+    type: docker
+    dockerfile: ./backend/Dockerfile
+    port: 3000
+    env:
+      NODE_ENV: production
+      PORT: 3000
+    healthcheck:
+      path: /api/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    type: docker
+    dockerfile: ./frontend/web/Dockerfile
+    port: 3000
+    env:
+      NODE_ENV: production
+      PORT: 3000
+
+# 部署说明
+# 1. 后端服务: 使用 ./backend/Dockerfile
+# 2. 前端服务: 使用 ./frontend/web/Dockerfile
+# 3. 分别部署两个服务
+# 4. 后端端口: 3000
+# 5. 前端端口: 3000 (不同服务)

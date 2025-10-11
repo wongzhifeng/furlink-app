@@ -1,0 +1,43 @@
+# Zeabur后端部署配置
+# FurLink 宠物紧急寻回平台后端服务
+
+# 项目类型
+type: docker
+
+# Dockerfile路径
+dockerfile: ./backend/Dockerfile
+
+# 端口配置
+port: 3000
+
+# 环境变量
+env:
+  NODE_ENV: production
+  PORT: 3000
+
+# 构建配置
+build:
+  context: .
+  dockerfile: ./backend/Dockerfile
+
+# 启动配置
+start: npm start
+
+# 健康检查
+healthcheck:
+  path: /api/health
+  interval: 30s
+  timeout: 10s
+  retries: 3
+
+# 资源限制
+resources:
+  memory: 512Mi
+  cpu: 500m
+
+# 部署说明
+# 1. 确保选择Docker部署方式
+# 2. Dockerfile路径: ./backend/Dockerfile
+# 3. 端口: 3000
+# 4. 环境变量: PORT=3000
+# 5. 访问地址: https://your-backend-service.zeabur.app
