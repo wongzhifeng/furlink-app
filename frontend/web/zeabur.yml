@@ -2,10 +2,10 @@
 # FurLink Web前端 - 宠物紧急寻回平台
 
 # 构建配置
-build: npm run build
+build: npm ci && npm run build
 
 # 启动配置  
-start: npm run start
+start: npm run preview
 
 # 端口配置
 port: 3000
