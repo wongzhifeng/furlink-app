@@ -1,9 +1,34 @@
-import React, { memo, useMemo } from 'react'
+import React, { memo, useMemo, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, Heart, Stethoscope } from 'lucide-react'
+import { AlertTriangle, Heart, Stethoscope, Server, CheckCircle, XCircle } from 'lucide-react'
+import { checkHealth, getServiceInfo } from '../config/api.js'
 
 // 优化后的Home组件
 export const Home: React.FC = memo(() => {
+  // 服务状态监控
+  const [serviceStatus, setServiceStatus] = useState({
+    zeabur: { healthy: false, status: 'unknown' },
+    zion: { healthy: false, status: 'unknown' }
+  });
+  const [currentService, setCurrentService] = useState('zion');
+
+  // 检查服务状态
+  useEffect(() => {
+    const checkServices = async () => {
+      try {
+        const serviceInfo = getServiceInfo();
+        setServiceStatus(serviceInfo.status);
+        setCurrentService(serviceInfo.best);
+      } catch (error) {
+        console.warn('Failed to check service status:', error);
+      }
+    };
+
+    checkServices();
+    const interval = setInterval(checkServices, 30000); // 每30秒检查一次
+    return () => clearInterval(interval);
+  }, []);
+
   // 使用useMemo优化数据计算
   const stats = useMemo(() => ({
     totalPets: 2,
@@ -93,8 +118,56 @@ export const Home: React.FC = memo(() => {
     )
   ), [alerts])
 
+  // 服务状态显示组件
+  const renderServiceStatus = useMemo(() => (
+    <div className="bg-white rounded-lg shadow-sm border p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+          <Server className="h-5 w-5 mr-2 text-indigo-600" />
+          服务状态
+        </h3>
+        <span className="text-sm text-gray-500">
+          当前: <span className="font-medium text-indigo-600">{currentService}</span>
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex items-center space-x-2">
+          {serviceStatus.zion.healthy ? (
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          ) : (
+            <XCircle className="h-4 w-4 text-red-500" />
+          )}
+          <span className="text-sm font-medium text-gray-700">Zion平台</span>
+          <span className={`text-xs px-2 py-1 rounded-full ${
+            serviceStatus.zion.healthy 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-red-100 text-red-800'
+          }`}>
+            {serviceStatus.zion.healthy ? '正常' : '异常'}
+          </span>
+        </div>
+        <div className="flex items-center space-x-2">
+          {serviceStatus.zeabur.healthy ? (
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          ) : (
+            <XCircle className="h-4 w-4 text-red-500" />
+          )}
+          <span className="text-sm font-medium text-gray-700">Zeabur平台</span>
+          <span className={`text-xs px-2 py-1 rounded-full ${
+            serviceStatus.zeabur.healthy 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-red-100 text-red-800'
+          }`}>
+            {serviceStatus.zeabur.healthy ? '正常' : '异常'}
+          </span>
+        </div>
+      </div>
+    </div>
+  ), [serviceStatus, currentService]);
+
   return (
     <div className="space-y-6">
+      {renderServiceStatus}
       {renderQuickActions}
       {renderStats}
       {renderAlerts}
