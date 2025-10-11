@@ -24,6 +24,17 @@ if [ -d "dist" ]; then
     echo "✅ 构建成功！"
     echo "构建文件："
     ls -la dist/
+    
+    # 本地预览测试
+    echo ""
+    echo "🧪 本地预览测试..."
+    echo "启动预览服务器..."
+    echo "访问地址: http://localhost:3000"
+    echo "按 Ctrl+C 停止预览"
+    echo ""
+    
+    # 启动预览服务器
+    npm run preview
 else
     echo "❌ 构建失败！"
     exit 1
@@ -33,11 +44,12 @@ echo ""
 echo "🚀 部署准备完成！"
 echo ""
 echo "Zeabur部署步骤："
-echo "1. 将代码推送到GitHub"
-echo "2. 在Zeabur中连接GitHub仓库"
+echo "1. 将代码推送到Gitee"
+echo "2. 在Zeabur中连接Gitee仓库"
 echo "3. 选择 'frontend/web' 目录"
-echo "4. 自动检测为Node.js项目"
-echo "5. 自动构建和部署"
+echo "4. 选择 Node.js 环境"
+echo "5. 端口设置为 3000"
+echo "6. 环境变量留空"
+echo "7. 自动构建和部署"
 echo ""
-echo "或者使用命令行部署："
-echo "zeabur deploy"
+echo "部署完成后访问: https://your-project-name.zeabur.app"

@@ -1,14 +1,24 @@
 # Zeabur部署配置
-# 用于部署FurLink Web前端到Zeabur平台
+# FurLink Web前端 - 宠物紧急寻回平台
 
-# 构建命令
-npm run build
+# 构建配置
+build: npm run build
 
-# 启动命令
-npm run start
+# 启动配置  
+start: npm run start
 
 # 端口配置
-PORT=3000
+port: 3000
 
 # 环境变量
-NODE_ENV=production
+NODE_ENV: production
+PORT: 3000
+
+# 健康检查
+healthcheck: http://localhost:3000
+
+# 部署说明
+# 1. 选择Node.js环境
+# 2. 选择frontend/web目录
+# 3. 自动构建和部署
+# 4. 访问 https://your-project-name.zeabur.app
