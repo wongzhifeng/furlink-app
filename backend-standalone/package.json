@@ -1,0 +1,40 @@
+{
+  "name": "furlink-backend-api",
+  "version": "1.0.0",
+  "description": "FurLink 宠物紧急寻回平台后端API服务",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node --max-old-space-size=400 src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo 'No tests specified'",
+    "build": "echo 'No build step required'"
+  },
+  "keywords": [
+    "furlink",
+    "pet",
+    "emergency",
+    "api",
+    "backend",
+    "nodejs",
+    "express"
+  ],
+  "author": "FurLink Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/hangzhou_thousand_army_wangzhifeng/furlink.git",
+    "directory": "backend-standalone"
+  }
+}
