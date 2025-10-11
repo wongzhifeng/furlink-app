@@ -2,12 +2,12 @@
 // 支持Zeabur和Zion双平台后端服务
 
 export const API_CONFIG = {
-  // 平台配置 - 新架构：Zeabur前端 + Zion后端
+  // 平台配置 - 新架构：Zeabur前端 + Zeabur后端
   platforms: {
-    zion: {
-      name: 'Zion',
+    zeabur: {
+      name: 'Zeabur',
       baseUrl: process.env.NODE_ENV === 'production' 
-        ? 'https://your-zion-backend-url.zion.com' // 部署后更新为实际Zion URL
+        ? 'https://furlink-backend-us.zeabur.app' // Zeabur后端URL
         : 'http://localhost:8081', // 本地开发
       status: 'primary',
       features: ['完整API', '数据库集成', '用户管理', '地理位置', '权限系统', '宠物管理', '紧急寻回'],
@@ -15,14 +15,14 @@ export const API_CONFIG = {
     }
   },
 
-  // 环境配置 - 新架构：只有Zion后端
+  // 环境配置 - 新架构：只有Zeabur后端
   environments: {
     development: {
-      primary: 'zion',
+      primary: 'zeabur',
       timeout: 5000
     },
     production: {
-      primary: 'zion',
+      primary: 'zeabur',
       timeout: 10000
     }
   },
@@ -63,12 +63,12 @@ export const API_CONFIG = {
   }
 };
 
-// 服务选择器 - 简化版：只有Zion后端
+// 服务选择器 - 简化版：只有Zeabur后端
 export class ServiceSelector {
   constructor(environment = 'development') {
     this.environment = environment;
     this.config = API_CONFIG.environments[environment];
-    this.currentPlatform = this.config.primary; // 只有'zion'
+    this.currentPlatform = this.config.primary; // 只有'zeabur'
   }
 
   // 获取当前平台配置
@@ -134,18 +134,18 @@ export class ServiceSelector {
   }
 }
 
-// 服务状态监控 - 简化版：只监控Zion后端
+// 服务状态监控 - 简化版：只监控Zeabur后端
 export class ServiceMonitor {
   constructor(serviceSelector) {
     this.serviceSelector = serviceSelector;
-    this.healthStatus = { zion: { healthy: false, status: 'unknown' } };
+    this.healthStatus = { zeabur: { healthy: false, status: 'unknown' } };
     this.monitoringInterval = null;
   }
 
   // 开始监控
   startMonitoring(intervalMs = 30000) {
     this.monitoringInterval = setInterval(async () => {
-      await this.checkZionService();
+      await this.checkZeaburService();
     }, intervalMs);
   }
 
@@ -157,10 +157,10 @@ export class ServiceMonitor {
     }
   }
 
-  // 检查Zion服务
-  async checkZionService() {
+  // 检查Zeabur服务
+  async checkZeaburService() {
     const health = await this.serviceSelector.checkHealth();
-    this.healthStatus.zion = health;
+    this.healthStatus.zeabur = health;
   }
 
   // 获取服务状态
@@ -168,9 +168,9 @@ export class ServiceMonitor {
     return this.healthStatus;
   }
 
-  // 获取最佳服务（只有Zion）
+  // 获取最佳服务（只有Zeabur）
   getBestService() {
-    return this.healthStatus.zion?.healthy ? 'zion' : 'zion';
+    return this.healthStatus.zeabur?.healthy ? 'zeabur' : 'zeabur';
   }
 }
 
@@ -203,7 +203,7 @@ export const getServiceInfo = () => {
       ...currentPlatform
     },
     status: serviceStatus,
-    best: 'zion' // 只有Zion后端
+    best: 'zeabur' // 只有Zeabur后端
   };
 };
 
