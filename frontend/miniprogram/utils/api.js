@@ -284,7 +284,16 @@ export function handleApiError(error) {
   let errorMessage = '网络错误';
   
   if (error.errMsg) {
-    if (error.errMsg.includes('timeout')) {
+    if (error.errMsg.includes('url not in domain list')) {
+      errorMessage = '域名未配置，请检查域名白名单';
+      // 显示详细的配置提示
+      wx.showModal({
+        title: '域名配置提示',
+        content: '请在微信公众平台配置域名白名单，或在开发者工具中勾选"不校验合法域名"',
+        showCancel: false,
+        confirmText: '知道了'
+      });
+    } else if (error.errMsg.includes('timeout')) {
       errorMessage = '请求超时，请检查网络连接';
     } else if (error.errMsg.includes('fail')) {
       errorMessage = '网络连接失败';
@@ -295,11 +304,14 @@ export function handleApiError(error) {
     }
   }
   
-  wx.showToast({
-    title: errorMessage,
-    icon: 'none',
-    duration: 2000
-  });
+  // 只在非域名错误时显示Toast
+  if (!error.errMsg || !error.errMsg.includes('url not in domain list')) {
+    wx.showToast({
+      title: errorMessage,
+      icon: 'none',
+      duration: 2000
+    });
+  }
   
   return errorMessage;
 }

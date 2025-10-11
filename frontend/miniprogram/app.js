@@ -1,6 +1,8 @@
 // app.js - FurLink 小程序主入口
 // 极简版本，避免所有文件系统操作
 
+import { comprehensiveCheck, showConfigTip } from './utils/env.js';
+
 App({
   globalData: {
     userInfo: null,
@@ -16,6 +18,9 @@ App({
     
     // 最小化启动操作，避免文件系统错误
     this.initApp();
+    
+    // 环境检查
+    this.checkEnvironment();
   },
 
   onShow() {
@@ -211,5 +216,24 @@ App({
       other: '🔧'
     };
     return iconMap[serviceType] || '🔧';
+  },
+
+  // 环境检查
+  async checkEnvironment() {
+    try {
+      console.log('开始环境检查...');
+      const result = await comprehensiveCheck();
+      
+      // 如果检测到域名配置问题，显示提示
+      if (result.domainConfig.needConfig) {
+        setTimeout(() => {
+          showConfigTip();
+        }, 2000); // 延迟2秒显示，避免影响启动
+      }
+      
+      console.log('环境检查完成:', result);
+    } catch (error) {
+      console.error('环境检查失败:', error);
+    }
   }
 });
