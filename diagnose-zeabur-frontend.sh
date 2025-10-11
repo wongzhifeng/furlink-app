@@ -58,9 +58,15 @@ check_frontend_status() {
     local title=$(curl -s "$frontend_url" | grep -o '<title>[^<]*</title>' | sed 's/<[^>]*>//g')
     log_info "页面标题: $title"
     
+    # 检查页面描述
+    local description=$(curl -s "$frontend_url" | grep -o '<meta name="description" content="[^"]*"' | sed 's/<meta name="description" content="//g' | sed 's/"//g')
+    log_info "页面描述: $description"
+    
     if [[ "$title" == *"FluLink"* ]]; then
-        log_error "✗ 检测到旧版本FluLink代码"
-        log_warning "需要重新部署FurLink代码"
+        log_error "✗ 检测到FluLink代码 (错误项目)"
+        log_warning "Zeabur可能连接到了错误的Git仓库"
+        log_warning "当前部署: $title"
+        log_warning "预期部署: FurLink - 毛茸茸链接"
         return 2
     elif [[ "$title" == *"FurLink"* ]]; then
         log_success "✓ 检测到正确版本FurLink代码"
@@ -141,22 +147,25 @@ generate_fix_suggestions() {
     log_header "生成修复建议"
     
     echo -e "${CYAN}问题诊断:${NC}"
-    echo "1. Zeabur上部署的是旧版本FluLink代码"
-    echo "2. 需要重新部署最新的FurLink代码"
+    echo "1. Zeabur上部署的是FluLink星尘共鸣版 (错误项目)"
+    echo "2. 应该部署的是FurLink宠物平台 (正确项目)"
+    echo "3. Zeabur可能连接到了错误的Git仓库"
     echo ""
     
     echo -e "${CYAN}解决方案:${NC}"
     echo "1. 登录Zeabur平台: https://zeabur.com"
     echo "2. 找到 furlink-frontend-us 服务"
-    echo "3. 点击 'Redeploy' 或 '重新部署'"
-    echo "4. 等待构建完成"
+    echo "3. 检查源码设置:"
+    echo "   - 仓库地址: https://gitee.com/hangzhou_thousand_army_wangzhifeng/furlink.git"
+    echo "   - 分支: main"
+    echo "   - 目录: frontend/web"
+    echo "4. 如果配置错误，重新配置或重新创建服务"
     echo ""
     
-    echo -e "${CYAN}如果重新部署不工作:${NC}"
-    echo "1. 检查Git仓库连接"
-    echo "2. 确认分支: main"
-    echo "3. 确认目录: frontend/web"
-    echo "4. 手动同步代码"
+    echo -e "${CYAN}如果配置正确但代码未更新:${NC}"
+    echo "1. 点击 'Sync' 或 '同步' 按钮"
+    echo "2. 点击 'Redeploy' 或 '重新部署'"
+    echo "3. 等待构建完成"
     echo ""
     
     echo -e "${CYAN}验证步骤:${NC}"
@@ -175,14 +184,23 @@ show_redeploy_guide() {
     echo "  登录您的账号"
     echo ""
     
-    echo -e "${BLUE}步骤2: 找到前端服务${NC}"
+    echo -e "${BLUE}步骤2: 检查源码配置${NC}"
     echo "  找到服务: furlink-frontend-us"
     echo "  点击进入服务详情"
+    echo "  检查 'Source' 或 '源码' 设置:"
+    echo "    - 仓库地址: https://gitee.com/hangzhou_thousand_army_wangzhifeng/furlink.git"
+    echo "    - 分支: main"
+    echo "    - 目录: frontend/web"
     echo ""
     
-    echo -e "${BLUE}步骤3: 触发重新部署${NC}"
-    echo "  点击 'Redeploy' 或 '重新部署' 按钮"
-    echo "  等待构建完成 (通常需要2-5分钟)"
+    echo -e "${BLUE}步骤3: 修复配置 (如果错误)${NC}"
+    echo "  如果配置不正确:"
+    echo "    1. 删除现有服务"
+    echo "    2. 重新创建服务"
+    echo "    3. 使用正确的仓库地址和目录"
+    echo "  如果配置正确:"
+    echo "    1. 点击 'Sync' 或 '同步' 按钮"
+    echo "    2. 点击 'Redeploy' 或 '重新部署'"
     echo ""
     
     echo -e "${BLUE}步骤4: 验证部署结果${NC}"
@@ -225,8 +243,9 @@ main() {
     # 总结
     log_header "诊断总结"
     if [ $frontend_status -eq 2 ]; then
-        log_error "确认问题: Zeabur部署的是旧版本FluLink代码"
-        log_info "解决方案: 需要在Zeabur平台重新部署"
+        log_error "确认问题: Zeabur部署的是FluLink星尘共鸣版 (错误项目)"
+        log_warning "应该部署: FurLink宠物平台 (正确项目)"
+        log_info "解决方案: 检查Zeabur源码配置，可能需要重新配置服务"
     elif [ $frontend_status -eq 0 ]; then
         log_success "前端部署正常"
     else
