@@ -1,4 +1,4 @@
-// FurLink 后端主入口文件
+// FurLink 后端主入口文件 - 简化版本
 // 宠物紧急寻回平台 - 云端开发模式
 
 import express from 'express';
@@ -7,8 +7,6 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
-import rateLimit from 'express-rate-limit';
 
 // 导入路由
 import emergencyRoutes from './routes/emergency.js';
@@ -19,16 +17,11 @@ import servicesRoutes from './routes/services.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { accessControl } from './middleware/accessControl.js';
 
-// 导入服务
-import { databaseService } from './services/databaseService.js';
-import { redisService } from './services/redisService.js';
-import { performanceMonitor } from './services/performanceMonitor.js';
-
 // 加载环境变量
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 
 // 基础中间件
 app.use(helmet());
@@ -37,14 +30,6 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
   credentials: true
 }));
-
-// 请求限制
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15分钟
-  max: 100, // 限制每个IP 100次请求
-  message: '请求过于频繁，请稍后再试'
-});
-app.use('/api/', limiter);
 
 // 日志中间件
 if (process.env.NODE_ENV !== 'test') {
@@ -66,7 +51,8 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime(),
     memory: process.memoryUsage(),
     version: process.env.npm_package_version || '1.0.0',
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    port: PORT
   });
 });
 
@@ -81,6 +67,7 @@ app.get('/', (req, res) => {
     message: '🐾 FurLink 宠物紧急寻回平台 API',
     version: '1.0.0',
     status: 'running',
+    port: PORT,
     endpoints: {
       health: '/api/health',
       emergency: '/api/emergency',
@@ -103,20 +90,8 @@ app.use('*', (req, res) => {
 app.use(errorHandler);
 
 // 启动服务器
-async function startServer() {
+function startServer() {
   try {
-    // 初始化数据库连接
-    await databaseService.connect();
-    console.log('✅ 数据库连接成功');
-
-    // 初始化Redis连接
-    await redisService.connect();
-    console.log('✅ Redis连接成功');
-
-    // 启动性能监控
-    performanceMonitor.start();
-    console.log('✅ 性能监控启动');
-
     // 启动服务器
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🐾 FurLink后端服务启动成功！`);
@@ -132,17 +107,13 @@ async function startServer() {
 }
 
 // 优雅关闭
-process.on('SIGTERM', async () => {
+process.on('SIGTERM', () => {
   console.log('🔄 收到SIGTERM信号，正在优雅关闭...');
-  await databaseService.disconnect();
-  await redisService.disconnect();
   process.exit(0);
 });
 
-process.on('SIGINT', async () => {
+process.on('SIGINT', () => {
   console.log('🔄 收到SIGINT信号，正在优雅关闭...');
-  await databaseService.disconnect();
-  await redisService.disconnect();
   process.exit(0);
 });
 
