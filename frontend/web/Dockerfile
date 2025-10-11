@@ -1,4 +1,4 @@
-# FurLink 前端Web应用 Dockerfile - 简化版
+# FurLink 前端Web应用 Dockerfile - 路径修复版
 # 宠物紧急寻回平台前端服务 - Zeabur部署优化
 
 # 构建阶段
@@ -7,11 +7,14 @@ FROM node:18-alpine AS builder
 # 设置工作目录
 WORKDIR /app
 
-# 复制所有文件
-COPY . .
+# 复制package文件
+COPY package*.json ./
 
 # 安装依赖
 RUN npm install
+
+# 复制源代码
+COPY . .
 
 # 构建应用
 RUN npm run build
