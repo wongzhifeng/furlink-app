@@ -1,0 +1,175 @@
+# FurLink 后端API服务 Docker忽略文件 - Zion平台版本
+# 宠物紧急寻回平台后端服务 - Docker构建优化
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# 环境变量
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 日志文件
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# 运行时数据
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# 覆盖率目录
+lib-cov/
+coverage/
+*.lcov
+
+# nyc测试覆盖率
+.nyc_output/
+
+# Grunt中间文件
+.grunt/
+
+# Bower依赖目录
+bower_components/
+
+# node-waf配置
+.lock-wscript
+
+# 编译的二进制插件
+build/Release/
+
+# 依赖目录
+node_modules/
+jspm_packages/
+
+# TypeScript缓存
+*.tsbuildinfo
+
+# 可选的npm缓存目录
+.npm
+
+# 可选的eslint缓存
+.eslintcache
+
+# Microbundle缓存
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# 可选的REPL历史
+.node_repl_history
+
+# 输出的npm包
+*.tgz
+
+# Yarn完整性文件
+.yarn-integrity
+
+# parcel-bundler缓存
+.cache/
+.parcel-cache/
+
+# Next.js构建输出
+.next/
+
+# Nuxt.js构建/生成输出
+.nuxt/
+dist/
+
+# Gatsby文件
+.cache/
+public/
+
+# Storybook构建输出
+.out/
+.storybook-out/
+
+# 临时文件夹
+tmp/
+temp/
+
+# 编辑器目录和文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS生成的文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# 测试文件
+test/
+tests/
+__tests__/
+*.test.js
+*.spec.js
+
+# 文档
+README.md
+docs/
+*.md
+
+# 配置文件
+.eslintrc*
+.prettierrc*
+jest.config.*
+babel.config.*
+webpack.config.*
+
+# 构建工具
+rollup.config.*
+vite.config.*
+tsconfig.json
+tsconfig.*.json
+
+# 性能分析
+*.cpuprofile
+*.heapprofile
+*.heapsnapshot
+
+# 备份文件
+*.bak
+*.backup
+*.old
+
+# 压缩文件
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# 其他
+.nyc_output/
+.coverage/
+.cache/
+.tmp/
+.temp/

@@ -1,0 +1,75 @@
+{
+  "name": "furlink-backend-zion",
+  "version": "1.0.0",
+  "description": "FurLink 宠物紧急寻回平台后端API服务 - Zion平台部署版本",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node --max-old-space-size=400 --max-semi-space-size=64 --optimize-for-size src/index.js",
+    "dev": "nodemon --max-old-space-size=400 --watch src --ext js --exec node src/index.js",
+    "test": "echo 'No tests specified'",
+    "build": "echo 'No build step required'",
+    "health": "curl -f http://localhost:8080/api/health || exit 1",
+    "metrics": "curl -f http://localhost:8080/api/metrics || exit 1",
+    "zion-info": "curl -f http://localhost:8080/api/zion/info || exit 1",
+    "lint": "eslint src --ext .js --fix",
+    "format": "prettier --write src/**/*.js",
+    "clean": "rm -rf node_modules package-lock.json",
+    "preinstall": "npx only-allow npm",
+    "postinstall": "npm audit --audit-level=high"
+  },
+  "keywords": [
+    "furlink",
+    "pet",
+    "emergency",
+    "api",
+    "backend",
+    "nodejs",
+    "express",
+    "zion",
+    "platform",
+    "performance",
+    "optimized"
+  ],
+  "author": "FurLink Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10",
+    "eslint": "^9.37.0",
+    "prettier": "^3.6.2",
+    "only-allow": "^1.2.1"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/hangzhou_thousand_army_wangzhifeng/furlink.git",
+    "directory": "backend-zion"
+  },
+  "homepage": "https://zion.com/projects/KrABb5Mb0qw",
+  "bugs": {
+    "url": "https://gitee.com/hangzhou_thousand_army_wangzhifeng/furlink.git/issues"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "private": true,
+  "files": [
+    "src",
+    "package.json",
+    "package-lock.json",
+    "README.md",
+    "zion.yml",
+    ".dockerignore",
+    "env.example"
+  ],
+  "sideEffects": false
+}

@@ -511,6 +511,41 @@ FurLink 是一个基于 FluLink 核心架构的宠物垂直社交平台，通过
 
 ---
 
-**记忆库更新时间**: 2024年12月19日 22:50  
-**项目状态**: MVP开发完成，云端部署中，3000次优化完成  
-**部署状态**: 前后端已部署到Zeabur，服务启动中
+## 🏢 Zion平台部署配置
+
+### 📍 Zion项目信息
+- **项目名称**: Furlink-app
+- **项目ID**: KrABb5Mb0qw
+- **数据库ID**: mgm6x7a6
+- **账号**: vx18668020218@qq.com
+
+### 🗄️ 数据库结构
+- `account` - 用户账户管理
+- `fz_province` - 省份信息
+- `fz_city` - 城市信息  
+- `fz_district` - 区县信息
+- `fz_audit_record` - 审计记录
+- `fz_permission_role` - 权限角色
+- `fz_account_has_permission_role` - 账户角色关联
+
+### 🔧 Zion后端配置
+- **后端目录**: `/backend-zion/`
+- **部署类型**: Docker容器
+- **端口配置**: 8080
+- **环境变量**: Zion项目ID和数据库ID已配置
+- **API端点**: 
+  - `/api/health` - 健康检查
+  - `/api/metrics` - 性能指标
+  - `/api/zion/info` - Zion项目信息
+  - `/api/zion/data/:table` - 数据查询
+
+### 🎯 部署状态
+- ✅ **Zeabur前端**: https://furlink-frontend.zeabur.app/
+- ✅ **Zeabur后端**: https://furlink-backend-m9k2.zeabur.app/
+- 🔄 **Zion后端**: 配置完成，待部署
+
+---
+
+**记忆库更新时间**: 2024年12月19日 23:00  
+**项目状态**: MVP开发完成，多平台部署配置完成，3000次优化完成  
+**部署状态**: Zeabur部署完成，Zion平台配置完成

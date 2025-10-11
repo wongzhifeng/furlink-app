@@ -1,0 +1,65 @@
+# Zion部署配置 - FurLink 后端API服务
+# 宠物紧急寻回平台后端服务 - Zion平台优化
+
+name: furlink-backend-zion
+type: docker
+dockerfile: ./Dockerfile
+port: 8080
+env:
+  NODE_ENV: production
+  PORT: 8080
+  NODE_OPTIONS: "--max-old-space-size=400 --max-semi-space-size=64 --optimize-for-size"
+  NODE_ENABLE_SOURCE_MAPS: "false"
+  NODE_DISABLE_COLORS: "1"
+  ALLOWED_ORIGINS: "https://furlink-frontend.zeabur.app,http://localhost:8080"
+  # Zion平台配置
+  ZION_PROJECT_ID: "KrABb5Mb0qw"
+  ZION_DATABASE_ID: "mgm6x7a6"
+  ZION_API_BASE_URL: "https://api.zion.com"
+  ZION_API_KEY: "your-zion-api-key"
+  # JWT_SECRET: "your_jwt_secret_key" # 生产环境请务必设置
+  # MONGODB_URL: "your_mongodb_connection_string" # 生产环境请务必设置
+  # REDIS_URL: "your_redis_connection_string" # 生产环境请务必设置
+
+# 资源配置 - 适配Zion平台限制
+cpu: 0.5 # 共享CPU
+memory: 512Mi # 512MB内存限制
+
+# 健康检查
+healthcheck:
+  path: /api/health
+  port: 8080
+  interval: 30s
+  timeout: 10s
+  retries: 3
+
+# 部署策略
+deployment:
+  strategy: rolling-update # 零停机部署
+  minReadySeconds: 10 # 最小就绪时间
+
+# 自动缩放 (可选，Zion平台可能有限制)
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 1 # 通常限制为1个实例
+
+# 监控和日志 (Zion内置)
+# 结构化日志已在应用代码中实现
+
+# Zion平台特定配置
+zion:
+  projectId: "KrABb5Mb0qw"
+  databaseId: "mgm6x7a6"
+  features:
+    - "用户账户管理"
+    - "地理位置数据"
+    - "权限角色系统"
+    - "审计记录"
+  tables:
+    - "account"
+    - "fz_province"
+    - "fz_city"
+    - "fz_district"
+    - "fz_audit_record"
+    - "fz_permission_role"
+    - "fz_account_has_permission_role"

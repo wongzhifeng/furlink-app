@@ -1,0 +1,593 @@
+---
+alwaysApply: false
+description: Zion平台代码组件核心规范，定义文件结构、导出规范、三段式接口标准
+---
+
+# Zion 代码组件核心规范
+
+## 🏗️ 平台架构原则
+
+Zion作为全栈无代码开发平台，每个项目拥有独立的前端（React）和后端，通过GraphQL API通信。代码组件允许开发者扩展平台组件功能。
+
+### 核心原则
+1. **全部使用React**: 所有组件必须采用React实现
+2. **严格遵循props协议**: props是唯一通信渠道，视为只读
+3. **数据库结构必须自动获取**: 通过MCP工具同步schema
+4. **智能项目检测**: 避免无脑创建新项目导致目录混乱
+5. **三段式类型导出**: PropData、StateData、Event、Props四个interface
+6. **后端通信统一通过query**: GraphQL查询存放在.gql文件中
+7. **二进制资源遵循专用协议**: 图片、视频、文件上传流程
+
+## 📁 文件与目录规范
+
+### 目录结构标准
+
+```
+[Zion项目根目录]/
+├── package.json                       # 项目配置（项目检测标志）
+├── src/                               # 源代码目录（项目检测标志）
+│   ├── components/                    # 组件总目录（项目检测标志）
+│   │   ├── UserForm/                  # 组件UserForm
+│   │   │   ├── UserForm.tsx           # 主文件，必须同名
+│   │   │   ├── index.ts               # 聚合导出
+│   │   │   ├── types.ts               # 类型定义（可选）
+│   │   │   ├── style.module.scss      # 样式文件（CSS Modules）
+│   │   │   ├── graphql/               # GraphQL查询目录
+│   │   │   │   └── userQuery.gql      # GraphQL文件
+│   │   │   └── README.md              # 组件文档
+│   │   ├── UserInfo/                  # 组件UserInfo
+│   │   └── index.ts                   # 组件库主入口
+│   └── App.tsx                        # 项目主入口
+```
+
+### 核心规范
+1. **每个组件单独文件夹**: 所有组件在`src/components/`下平级管理
+2. **主文件同名**: `UserInfo/UserInfo.tsx`，禁用`index.tsx`作为实现文件
+3. **GraphQL文件统一管理**: 放在组件目录下的`graphql/`子目录
+4. **平级管理**: 不存在大组件小组件概念，避免嵌套结构
+
+## 📤 导出与导入规范
+
+### 导出规范
+1. **禁止export default**: 主文件所有内容必须具名导出
+2. **三段式类型必须在主文件导出**: 不能在types.ts或index.ts导出
+3. **组件目录index.ts**: 只做聚合导出 `export * from './组件名'`
+4. **主入口对象导出**: `src/components/index.ts`用对象方式导出所有组件
+
+### 代码示例
+
+```typescript
+// ./src/components/UserInfo/UserInfo.tsx
+import React from 'react';
+import { EventHandler, State } from 'zvm-code-context';
+
+// 三段式类型必须在主文件导出
+export interface UserInfoPropData {
+  name: string;
+  age: number;
+  isActive: boolean;
+}
+
+export interface UserInfoStateData {
+  loading: State<boolean>;
+  errorMsg: State<string>;
+}
+
+export interface UserInfoEvent {
+  onConfirm?: EventHandler;
+  onCancel?: EventHandler;
+}
+
+export interface UserInfoProps {
+  propData: UserInfoPropData;
+  propState: UserInfoStateData;
+  event: UserInfoEvent;
+}
+
+// 组件本体具名导出
+export const UserInfo = (props: UserInfoProps) => {
+  // 组件实现
+};
+```
+
+```typescript
+// ./src/components/UserInfo/index.ts
+export * from './UserInfo';
+```
+
+```typescript
+// ./src/components/index.ts
+import { UserForm } from './UserForm';
+import { UserInfo } from './UserInfo';
+export default {
+  UserForm,
+  UserInfo,
+};
+```
+
+## 🔧 三段式代码规范
+
+### 四个必需Interface
+
+1. **PropData规范**
+   - 仅用于平台向组件传递数据（单向输入）
+   - 字段类型**必须为**: `string`、`number`、`boolean`、`string[]`、`number[]`、`boolean[]`、`Array<string>`、`Array<number>`、`Array<boolean>`
+   - **禁止使用**: 对象、联合类型、State<T>、嵌套数组、对象数组等
+
+2. **StateData规范**
+   - 仅用于组件向平台回传数据（双向绑定）
+   - 字段类型**必须为**: `State<T>`（如State<number>、State<string>）
+   - **禁止使用**: 基础类型或其他复杂类型
+
+3. **Event规范**
+   - 仅用于声明组件对外可触发的事件
+   - 字段类型**必须为**: 平台提供的`EventHandler`
+   - **禁止使用**: 自定义函数类型
+
+4. **Props规范**
+   - 必须包含propData、propState、event三个字段
+
+### 命名规范
+严格遵循：`组件名PropData`、`组件名StateData`、`组件名Event`、`组件名Props`
+
+### 常见错误（禁止）
+```typescript
+// ❌ PropData错误示例
+export interface WrongPropData {
+  // tags: string[];            // ✅ 现在允许：基础类型数组
+  options: { a: string };    // 禁止：对象
+  nestedArray: string[][];   // 禁止：嵌套数组
+  objectArray: {id: string}[]; // 禁止：对象数组
+  type: 'A' | 'B';           // 禁止：联合类型
+  result: State<number>;     // 禁止：State<T>
+}
+
+// ❌ StateData错误示例
+export interface WrongStateData {
+  loading: boolean;          // 禁止：基础类型
+  data: number[];            // 禁止：数组
+}
+
+// ❌ Event错误示例
+export interface WrongEvent {
+  onChange: (val: string) => void; // 禁止：自定义函数类型
+}
+```
+
+## 🔗 平台API使用规范
+
+### 核心约束
+1. **所有平台API必须通过useAppContext()获取ctx**
+2. **禁止直接操作window、location、全局变量**
+3. **GraphQL请求必须用ctx.query(gql.loc.source.body, params)**
+4. **页面跳转必须用ctx.navigate**
+
+### 标准用法
+```typescript
+import { useAppContext } from 'zvm-code-context';
+import userListQuery from './graphql/userListQuery.gql';
+
+const ctx = useAppContext();
+
+// GraphQL请求
+const res = await ctx.query(userListQuery.loc.source.body, { page: 1 });
+const users = res?.data?.userList;
+
+// 页面跳转
+ctx.navigate('/user/123', { params: { id: 123 } });
+
+// 获取全局数据
+const theme = ctx.globalData.theme;
+const user = ctx.globalData.currentUser;
+```
+
+## ⚛️ React Hooks规范
+
+### useCallback规范
+1. **禁止在依赖数组中包含state变量**
+2. **依赖数组只能包含**: ctx、固定配置值、props传入的固定值
+3. **数据加载函数必须接受参数**
+4. **禁止使用对象依赖**（如propData、propState、event）导致无限渲染
+
+### useEffect规范
+1. **初始化数据加载必须使用空依赖数组**
+2. **状态同步useEffect必须使用空依赖数组**
+3. **禁止直接依赖propState**
+4. **只使用基本类型依赖**（如isListening、isSupported）
+
+### 标准模式
+```typescript
+// ✅ 正确的useCallback
+const loadData = useCallback(async (page: number = 1, keyword?: string) => {
+  const res = await ctx.query(query.loc.source.body, {
+    limit: pageSize,
+    offset: (page - 1) * pageSize,
+    where: keyword ? { name: { _ilike: `%${keyword}%` } } : {}
+  });
+}, [ctx, pageSize]); // 只依赖固定值
+
+// ✅ 正确的useEffect
+useEffect(() => {
+  loadData(1); // 只在组件挂载时执行
+}, []); // 空依赖数组
+
+// ✅ 正确：只使用基本类型依赖
+useEffect(() => {
+  // 逻辑
+}, [isListening, isSupported]); // 基本类型
+
+// ❌ 错误：使用对象依赖
+useEffect(() => {
+  // 逻辑
+}, [propData, propState, event]); // 对象依赖导致无限渲染
+
+// 必要时使用eslint-disable
+useCallback(() => {
+  // 逻辑
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [isListening]);
+```
+
+## 📋 接口定义规范
+
+### PropData接口规范
+1. **所有属性应设置合理默认值**（使用可选属性`?`，提升组件灵活性和易用性）
+2. **属性类型限制**: 只能使用`string`、`number`、`boolean`、`string[]`、`number[]`、`boolean[]`、`Array<string>`、`Array<number>`、`Array<boolean>`
+3. **数组类型约束**: 只支持基础类型的一维数组，不支持嵌套数组
+4. **数组语法**: 支持`T[]`和`Array<T>`两种语法，功能完全相同
+5. **使用驼峰命名法**，名称具有明确语义
+
+### 数组类型最佳实践
+1. **数组命名规范**: 使用复数形式，如`tags`、`items`、`values`
+2. **数组语法选择**: 
+   - `T[]` 语法：更简洁，推荐用于简单场景
+   - `Array<T>` 语法：更明确，推荐用于复杂类型或需要强调数组性质的场景
+3. **空数组处理**: 组件内部应安全处理空数组情况
+4. **数组长度限制**: 建议在组件内部对数组长度进行合理限制
+5. **类型一致性**: 同一数组内所有元素类型必须一致
+
+```typescript
+// ✅ 正确的数组使用
+export interface ChartComponentPropData {
+  dataLabels?: string[];      // 数据标签数组 (T[] 语法)，可选
+  dataValues?: number[];      // 数据值数组 (T[] 语法)，可选
+  enabledFeatures?: boolean[]; // 功能开关数组 (T[] 语法)，可选
+  colorPalette?: Array<string>; // 颜色调色板数组 (Array<T> 语法)，可选
+  priorityLevels?: Array<number>; // 优先级数组 (Array<T> 语法)，可选
+  statusFlags?: Array<boolean>;   // 状态标志数组 (Array<T> 语法)，可选
+}
+
+// ✅ 组件内部安全处理
+const ChartComponent = (props: ChartComponentProps) => {
+  const { propData } = props;
+  
+  // 安全处理可选数组属性，提供默认值
+  const safeLabels = propData.dataLabels || [];
+  const safeValues = propData.dataValues || [];
+  
+  // 确保数组长度一致
+  const minLength = Math.min(safeLabels.length, safeValues.length);
+  const processedData = Array.from({ length: minLength }, (_, i) => ({
+    label: safeLabels[i],
+    value: safeValues[i]
+  }));
+  
+  return <div>{/* 渲染逻辑 */}</div>;
+};
+```
+
+### StateData接口规范
+1. **所有属性必须使用State<T>类型**
+2. **State<T>泛型参数**: 只能使用具体类型，不能使用联合类型或null
+
+### 数据模型接口规范
+1. **禁止嵌套可选对象**: 所有嵌套对象必须扁平化
+2. **禁止使用any类型**: 使用string替代any
+3. **禁止使用null类型**: 使用空字符串或默认值
+
+### 标准定义示例
+```typescript
+// ✅ 正确的PropData
+export interface AccountManagerPropData {
+  pageSize?: number;           // 可选属性，带默认值
+  searchKeyword?: string;      // 可选属性，带默认值
+  sortField?: string;          // 可选属性，带默认值
+  allowedRoles?: string[];     // ✅ 字符串数组 (T[] 语法)
+  enabledFeatures?: boolean[]; // ✅ 布尔数组 (T[] 语法)
+  priorityLevels?: Array<number>; // ✅ 数字数组 (Array<T> 语法)
+  departmentIds?: Array<string>;  // ✅ 字符串数组 (Array<T> 语法)
+}
+
+// ✅ 正确的StateData
+export interface AccountManagerStateData {
+  currentPage: State<number>;     // State<T>类型
+  totalCount: State<number>;      // State<T>类型
+  accounts: State<Account[]>;     // State<T>类型
+}
+
+// ✅ 正确的数据模型
+export interface Account {
+  id: string;                    // 具体类型
+  username: string;              // 具体类型
+  profile_image_url: string;     // 扁平化处理
+  fz_deleted: boolean;           // 具体类型
+}
+```
+
+## 🚨 React约束
+
+### 关键约束
+```typescript
+// ✅ 每个.tsx文件必须导入React
+import React from 'react';
+
+// ❌ 禁止手动external React
+// external: ['react'] // 禁止在vite.config.ts中配置
+```
+
+### 问题解决
+- 问题: `React is not defined`
+- 解决: 确保每个.tsx文件顶部导入React
+- 确保package.json中React为dependencies而非devDependencies
+
+## 🛡️ 安全检查规范
+
+### propState访问安全
+```typescript
+// ✅ 正确：所有propState访问必须有null检查
+const value = propState.transcript ? (propState.transcript.get() || '') : '';
+const length = value.length; // 安全访问
+
+// ❌ 错误：直接访问可能为null的值
+const value = propState.transcript.get(); // 可能返回null
+const length = value.length; // 可能访问null的length
+```
+
+### 外部API调用安全
+```typescript
+// ✅ 正确：API结果必须检查
+if (!result || !result.length) return;
+for (let i = 0; i < result.length; i++) {
+  if (!result[i]) continue;
+  // 安全处理
+}
+
+// ❌ 错误：直接访问API结果
+for (let i = 0; i < result.length; i++) {
+  const item = result[i][0]; // 可能访问null
+}
+```
+
+## 🎨 样式系统规范
+
+### CSS Modules使用规范
+```typescript
+// ✅ 正确：导入和使用
+import styles from './style.module.scss';
+<div className={styles['container']}>
+<div className={`${styles['button']} ${isActive ? styles.active : ''}`}>
+
+// ❌ 错误：直接使用类名
+import './style.module.scss';
+<div className="container">
+```
+
+**注意**: 样式文件必须使用`style.module.scss`命名，确保CSS Modules正确工作。
+
+### 微信小程序样式规范
+
+#### CSS支持情况
+✅ **支持的CSS特性**：
+- **基本样式属性**：color、font-size、margin、padding、background-color等
+- **盒模型**：width、height、border、display等
+- **Flex布局**：display: flex、justify-content、align-items等
+- **部分CSS3属性**：border-radius、box-shadow、transform等
+- **动画**：@keyframes、animation等（需要添加-webkit-前缀）
+
+#### 小程序原生组件规范
+
+**基础视图容器 (View Container)**
+
+| 组件 | 核心用途与精简说明 |
+| :--- | :--- |
+| **`<view>`** | **最基础**的视图容器，相当于 HTML 中的 `div`，用于布局和样式控制。 |
+| **`<scroll-view>`** | **可滚动**的视图容器。需要设置 `scroll-y` 或 `scroll-x` 来指定滚动方向。 |
+| **`<swiper>`** | **滑块视图容器**，常用于图片轮播。其子组件应为 **`<swiper-item>`**。 |
+
+**基础内容 (Basic Content)**
+
+| 组件 | 核心用途与精简说明 |
+| :--- | :--- |
+| **`<text>`** | **文本**组件。只能在它内部嵌套 `<text>`。支持**长按选中** (selectable)。 |
+| **`<icon>`** | **图标**组件。用于显示**预设的图标**，需通过 `type` 属性指定图标类型。 |
+| **`<rich-text>`** | **富文本**组件。可显示**HTML 字符串** (通过 `nodes` 属性)，支持部分标签和样式。 |
+| **`<progress>`** | **进度条**组件。通过 `percent` 属性设置进度，可设置颜色和是否显示**百分比数值**。 |
+
+**表单组件 (Form Components)**
+
+| 组件 | 核心用途与精简说明 |
+| :--- | :--- |
+| **`<button>`** | **按钮**。可设置大小 (size)、类型 (type) 和是否禁用 (disabled)。支持**开放能力** (如获取用户信息)。 |
+| **`<input>`** | **单行文本输入框**。支持设置 `type` (如 text, number, password)。常用于收集用户输入。 |
+| **`<textarea>`** | **多行文本输入框**。用于长文本输入。 |
+| **`<radio-group>`** | **单选框组**。与 `<radio>` 配合使用，用于**单项选择**。 |
+| **`<checkbox-group>`** | **复选框组**。与 `<checkbox>` 配合使用，用于**多项选择**。 |
+| **`<picker>`** | **选择器**。从底部弹出的**通用选择器**。支持**普通选择器**、**时间**、**日期**和**城市选择**。 |
+| **`<switch>`** | **开关选择器**。用于**开关**状态的切换。 |
+| **`<slider>`** | **滑块选择器**。用于**范围**选择。 |
+| **`<form>`** | **表单**。用于**收集表单组件**的数据，并通过 `bindsubmit` 提交。 |
+
+**媒体组件 (Media Components)**
+
+| 组件 | 核心用途与精简说明 |
+| :--- | :--- |
+| **`<image>`** | **图片**。用于显示**网络**或**本地图片**。需设置 `src` 属性。支持 `mode` 属性设置**裁剪和缩放模式**。 |
+| **`<video>`** | **视频**。用于播放**视频文件**。 |
+| **`<camera>`** | **系统相机**。用于调用**系统相机**进行拍照或录像。 |
+
+**开放能力 (Open Capabilities)**
+
+| 组件 | 核心用途与精简说明 |
+| :--- | :--- |
+| **`<web-view>`** | **网页容器**。用于承载**H5 网页**，可加载外部链接。 |
+| **`<official-account>`**| **公众号关注组件**。在小程序内**引导用户关注**公众号。 |
+| **`<open-data>`** | **展示开放数据**。用于展示如**用户头像**、**昵称**等不需要授权的公开数据。 |
+| **`<ad>`** | **广告**组件。用于展示**小程序内置广告**。 |
+
+**导航 (Navigation)**
+
+| 组件 | 核心用途与精简说明 |
+| :--- | :--- |
+| **`<navigator>`** | **页面跳转**。用于**跳转**到应用内的其他小程序页面。通过 `url` 属性指定目标路径。 |
+
+**补充/其他 (Others)**
+
+| 组件 | 核心用途与精简说明 |
+| :--- | :--- |
+| **`<canvas>`** | **画布**。用于**绘图**，支持 2D/WebGL。 |
+| **`<map>`** | **地图**。用于显示**地图**，支持标记点和路线。 |
+| **`<live-player>`** | **直播**播放器。用于播放**实时直播流**。 |
+| **`<live-pusher>`** | **直播推流**。用于将**本地视频/音频**推送到直播服务。 |
+
+### 微信小程序代码组件开发特殊说明
+
+#### 前置条件
+- **小程序端与网页端代码组件库分离**
+- **小程序有主包/分包大小不超过 2MB 的限制**，注意代码组件库的大小
+
+#### 开发说明
+
+**1. 直接使用 HTML 组件**
+```javascript
+// 在小程序编译产物中，这段会变成 <view>Hello world</view>
+<div>Hello world</div>
+```
+
+**2. 直接使用 wx**
+```typescript
+// 1.在 src/typings/global.d.ts 中加入
+declare const wx: any;
+ 
+// 2.使用
+wx.createSelectorQuery()
+  .select("#xxx")
+  .boundingClientRect((rect: any) => {
+    // console.log(rect)
+   })
+   .exec();
+```
+
+**3. 使用 @tarojs/taro 和 @tarojs/components**
+```bash
+npm i @tarojs/taro@4.0.9 @tarojs/components@4.0.9
+```
+
+```typescript
+// 在 vite.config.ts 的 shared 中加入 @tarojs/taro 和 @tarojs/components
+export default defineConfig({
+  plugins: [
+    ...
+    federation({
+      ...
+      shared: [..., "@tarojs/taro", "@tarojs/components"],
+    }),
+  ],
+  ...
+});
+ 
+// 使用
+import Taro from '@tarojs/taro';
+import { ScrollView } from '@tarojs/components';
+ 
+Taro.createSelectorQuery()
+  .select("#xxx")
+  .boundingClientRect((rect: any) => {
+    // console.log(rect)
+   })
+   .exec();
+ 
+return <ScrollView>xxxx</ScrollView>
+```
+
+**4. 使用 taro-ui**
+```bash
+npm i taro-ui
+ 
+# 如遇依赖冲突可用：
+npm i taro-ui --legacy-peer-deps
+```
+
+```typescript
+import { AtCalendar } from "taro-ui";
+import "taro-ui/dist/style/components/calendar.scss";
+ 
+export interface CalendarPropData {}
+ 
+export interface CalendarEvent {}
+ 
+export interface CalendarStateData {}
+ 
+export interface CalendarProps {
+  event: CalendarEvent;
+  propData: CalendarPropData;
+  propState: CalendarStateData;
+}
+ 
+export function Calendar({}: CalendarProps) {
+  return <AtCalendar />;
+}
+```
+
+#### 注意事项
+- **如果使用了 @tarojs/taro 和 @tarojs/components 一定要加到 vite.config.shared 中**
+- **小程序端 vite.config.shared 目前仅支持**：
+  - react
+  - react-dom
+  - classname
+  - constate
+  - lodash
+  - dayjs
+  - @tarojs/taro
+  - @tarojs/components
+  - zvm-code-context
+- **实时预览不支持 Taro 相关的依赖**，如果有使用，请生成小程序后查看
+
+#### 调试说明
+如果代码组件逻辑相对比较复杂，需要本地调试：
+1. 下载微信开发者工具
+2. 根据 Taro 文档初始化一个空白项目
+3. 在 Taro 项目中开发代码组件，在微信开发者工具中调试
+
+#### 参考文档
+- **Taro**: https://docs.taro.zone/docs/
+- **微信小程序**: https://developers.weixin.qq.com/miniprogram/dev/framework/
+
+## ✅ 发布前检查清单
+
+### 代码质量检查
+```bash
+npx tsc --noEmit        # 类型检查
+npm run lint            # 代码规范检查
+npm run build           # 构建检查
+npm version patch       # 版本管理
+functorz dryrun         # 预发布测试
+```
+
+### 强制检查项
+- [ ] 所有PropData属性都设置了合理默认值（非必填项，提升组件灵活性）
+- [ ] 所有PropData数组类型都是基础类型的一维数组（支持`T[]`和`Array<T>`语法）
+- [ ] 所有StateData属性都使用`State<T>`类型
+- [ ] 所有数据模型字段都有具体类型（无`any`、`null`）
+- [ ] 所有嵌套对象都已扁平化处理
+- [ ] 所有useCallback依赖都不包含state变量
+- [ ] 所有useEffect初始化都使用空依赖数组
+- [ ] 每个.tsx文件都导入了React
+- [ ] 构建和类型检查无错误
+- [ ] **所有propState访问都有null检查**
+- [ ] **所有外部API调用都有安全检查**
+- [ ] **CSS Modules使用正确**
+- [ ] **React Hooks依赖数组设置正确**
+
+---
+
+**注意**: 本文件专注代码规范标准，GraphQL详细规范和媒体上传协议请参考GraphQL指南文件。

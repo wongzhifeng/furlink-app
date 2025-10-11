@@ -1,0 +1,1066 @@
+---
+alwaysApply: false
+description: Zion平台GraphQL架构指南，包含Schema结构、API查询规范和媒体上传协议
+---
+
+# Zion GraphQL Schema & API Standards
+
+## 🎯 Core GraphQL Usage Principles
+
+### Fundamental Rules
+1. **ALL data interactions MUST go through GraphQL**
+2. **Each query/mutation MUST be written in separate .gql files**
+3. **Consistently place in `graphql/` subdirectory under component directory**
+4. **Import .gql files using import statements**
+5. **Send requests using `gqlDoc.loc.source.body`**
+
+### Standard Usage Pattern
+```typescript
+// Directory Structure
+./src/components/UserInfo/
+├── UserInfo.tsx
+├── graphql/
+│   ├── getUserList.gql
+│   ├── updateUser.gql
+│   └── deleteUser.gql
+
+// getUserList.gql
+query GetUserList($page: Int, $where: user_bool_exp, $order_by: [user_order_by!]) {
+  user(
+    limit: 10,
+    offset: $page,
+    where: $where,
+    order_by: $order_by
+  ) {
+    id
+    username
+    email
+    created_at
+    profile {
+      display_name
+      avatar_image {
+        url
+        id
+      }
+    }
+  }
+}
+
+// UserInfo.tsx
+import React from 'react';
+import { useAppContext } from 'zvm-code-context';
+import getUserListGql from './graphql/getUserList.gql';
+
+export const UserInfo = (props: UserInfoProps) => {
+  const ctx = useAppContext();
+  
+  const loadUsers = useCallback(async (page: number = 1, filters?: any) => {
+    const res = await ctx.query(getUserListGql.loc.source.body, {
+      page: (page - 1) * 10,
+      where: filters,
+      order_by: [{ created_at: "desc" }]
+    });
+    return res?.data?.user || [];
+  }, [ctx]);
+};
+```
+
+## 🗃️ Schema Architecture & Data Model
+
+### Automatic Schema Generation
+The GraphQL schema is automatically generated based on:
+- **Database schema** (tables, relationships, constraints)
+- **Imported external APIs** (REST APIs converted to GraphQL)
+- **AI Agent configurations** (custom data processing logic)
+- **Actionflow definitions** (workflow automation schemas)
+
+### Standard Table Operations
+For each database table (e.g., `user`), the system generates:
+
+**Query Operations**:
+- `user`: Fetch multiple records with filtering, sorting, pagination
+- `user_by_pk`: Fetch single record by primary key
+- `user_aggregate`: Aggregate operations (count, sum, avg, max, min)
+
+**Mutation Operations**:
+- `insert_user` / `insert_user_one`: Insert single or multiple records
+- `update_user` / `update_user_by_pk`: Update records by conditions or primary key
+- `delete_user` / `delete_user_by_pk`: Delete records by conditions or primary key
+- `upsert_user`: Insert or update (upsert) operations
+
+**Subscription Operations**:
+- `user_stream`: Real-time updates for user data changes
+
+### System Managed Fields
+All tables automatically include system fields (cannot be manually set):
+- `id`: Primary key (bigint), auto-generated
+- `created_at`: Timestamp, automatically set on insertion
+- `updated_at`: Timestamp, automatically updated on modification
+- `fz_deleted`: Soft delete flag (boolean), managed by system
+
+## 🔍 Advanced Query Operations
+
+### Standard Query Parameters
+All generated queries support the following parameters:
+
+```graphql
+query GetUsers(
+  $where: user_bool_exp,                    # Filtering conditions
+  $order_by: [user_order_by!],             # Sorting rules
+  $limit: Int,                             # Maximum records to fetch
+  $offset: Int,                            # Number of records to skip
+  $distinct_on: [user_select_column!]      # Distinct selection columns
+) {
+  user(
+    where: $where,
+    order_by: $order_by,
+    limit: $limit,
+    offset: $offset,
+    distinct_on: $distinct_on
+  ) {
+    id
+    username
+    email
+    profile {
+      display_name
+      bio
+    }
+    created_at
+    updated_at
+  }
+}
+```
+
+### Pagination Best Practices
+```typescript
+// Standard pagination logic
+const currentPage = 1; // Pages start from 1
+const pageSize = 10;
+const offset = Math.max(0, (currentPage - 1) * pageSize); // Prevent negative offset
+
+const paginationVariables = {
+  limit: pageSize,
+  offset: offset,
+  order_by: [{ created_at: "desc" }]
+};
+
+// Get total count with separate aggregate query
+const countQuery = `
+  query GetUserCount($where: user_bool_exp) {
+    user_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
+  }
+`;
+```
+
+### Relationship Queries
+```graphql
+query GetUsersWithRelations {
+  user {
+    id
+    username
+    email
+    
+    # One-to-One relationship
+    profile {
+      id
+      display_name
+      bio
+      avatar_image {
+        id
+        url
+        filename
+      }
+    }
+    
+    # One-to-Many relationship
+    posts {
+      id
+      title
+      content
+      created_at
+      
+      # Nested relationships
+      post_tags {
+        tag {
+          id
+          name
+          color
+        }
+      }
+      
+      # Media relationships
+      featured_image {
+        id
+        url
+        alt_text
+      }
+    }
+    
+    # Many-to-Many relationship (through junction table)
+    user_roles {
+      role {
+        id
+        name
+        permissions
+      }
+      assigned_at
+    }
+  }
+}
+```
+
+### Complex Filtering with where Clauses
+```graphql
+query GetFilteredUsers($searchTerm: String, $dateRange: timestamptz) {
+  user(
+    where: {
+      _and: [
+        {
+          _or: [
+            { username: { _ilike: $searchTerm } },
+            { email: { _ilike: $searchTerm } },
+            { 
+              profile: { 
+                display_name: { _ilike: $searchTerm } 
+              } 
+            }
+          ]
+        },
+        { created_at: { _gte: $dateRange } },
+        { fz_deleted: { _eq: false } }
+      ]
+    },
+    order_by: [
+      { profile: { display_name: "asc" } },
+      { created_at: "desc" }
+    ]
+  ) {
+    id
+    username
+    email
+    profile {
+      display_name
+    }
+    created_at
+  }
+}
+```
+
+### Aggregate Queries
+```graphql
+query GetUserStatistics($where: user_bool_exp) {
+  user_aggregate(where: $where) {
+    aggregate {
+      count                    # Total count
+      avg {
+        id                     # Average ID (example)
+      }
+      max {
+        created_at            # Latest creation date
+      }
+      min {
+        created_at            # Earliest creation date
+      }
+      sum {
+        # Only available for numeric fields
+      }
+    }
+    nodes {
+      id
+      username
+      created_at
+    }
+  }
+}
+```
+
+## 🔧 Mutation Operations
+
+### Insert Operations
+```graphql
+# Single record insertion
+mutation InsertUser($object: user_insert_input!) {
+  insert_user_one(
+    object: $object,
+    on_conflict: {
+      constraint: user_email_key,
+      update_columns: [username, updated_at]
+    }
+  ) {
+    id
+    username
+    email
+    created_at
+  }
+}
+
+# Multiple records insertion
+mutation InsertUsers($objects: [user_insert_input!]!) {
+  insert_user(
+    objects: $objects,
+    on_conflict: {
+      constraint: user_email_key,
+      update_columns: [username, updated_at]
+    }
+  ) {
+    affected_rows
+    returning {
+      id
+      username
+      email
+    }
+  }
+}
+
+# Nested object insertion
+mutation InsertUserWithProfile($object: user_insert_input!) {
+  insert_user_one(
+    object: {
+      username: $object.username,
+      email: $object.email,
+      profile: {
+        data: {
+          display_name: $object.profile.display_name,
+          bio: $object.profile.bio,
+          avatar_image_id: $object.profile.avatar_image_id
+        }
+      }
+    }
+  ) {
+    id
+    username
+    profile {
+      id
+      display_name
+    }
+  }
+}
+```
+
+### Update Operations
+```graphql
+# Update by primary key
+mutation UpdateUser($id: bigint!, $_set: user_set_input!) {
+  update_user_by_pk(
+    pk_columns: { id: $id },
+    _set: $_set
+  ) {
+    id
+    username
+    email
+    updated_at
+  }
+}
+
+# Conditional updates
+mutation UpdateUsers($where: user_bool_exp!, $_set: user_set_input!) {
+  update_user(
+    where: $where,
+    _set: $_set
+  ) {
+    affected_rows
+    returning {
+      id
+      username
+      updated_at
+    }
+  }
+}
+
+# Increment/Decrement operations
+mutation UpdateUserStats($id: bigint!, $increment: Int!) {
+  update_user_by_pk(
+    pk_columns: { id: $id },
+    _inc: { login_count: $increment }
+  ) {
+    id
+    login_count
+    updated_at
+  }
+}
+
+# Nested updates
+mutation UpdateUserProfile($userId: bigint!, $profileData: user_profile_set_input!) {
+  update_user_by_pk(
+    pk_columns: { id: $userId },
+    _set: {
+      profile: {
+        _set: $profileData
+      }
+    }
+  ) {
+    id
+    profile {
+      display_name
+      bio
+      updated_at
+    }
+  }
+}
+```
+
+### Delete Operations
+```graphql
+# Soft delete (recommended)
+mutation SoftDeleteUser($id: bigint!) {
+  update_user_by_pk(
+    pk_columns: { id: $id },
+    _set: { 
+      fz_deleted: true,
+      updated_at: "now()"
+    }
+  ) {
+    id
+    fz_deleted
+    updated_at
+  }
+}
+
+# Hard delete by primary key
+mutation DeleteUser($id: bigint!) {
+  delete_user_by_pk(id: $id) {
+    id
+    username
+  }
+}
+
+# Conditional delete
+mutation DeleteUsers($where: user_bool_exp!) {
+  delete_user(where: $where) {
+    affected_rows
+    returning {
+      id
+      username
+    }
+  }
+}
+```
+
+### Upsert Operations
+```graphql
+mutation UpsertUser($object: user_insert_input!) {
+  insert_user_one(
+    object: $object,
+    on_conflict: {
+      constraint: user_email_key,
+      update_columns: [username, updated_at]
+    }
+  ) {
+    id
+    username
+    email
+    created_at
+    updated_at
+  }
+}
+```
+
+## 📤 Media Upload Protocol
+
+### Two-Step Upload Process
+The Zion platform uses a secure two-step upload process for all media files:
+
+1. **Get Pre-signed URL**: Request upload authorization through GraphQL mutation
+2. **PUT Upload File**: Upload the raw file to object storage using HTTP PUT
+
+### Media Format Support
+**Supported MediaFormat enum values**:
+```
+CSS, CSV, DOC, DOCX, GIF, HTML, ICO, JPEG, JPG, JSON, MOV, MP3, MP4, 
+OTHER, PDF, PNG, PPT, PPTX, SVG, TXT, WAV, WEBP, XLS, XLSX, XML
+```
+
+**CannedAccessControlList enum values**:
+```
+AUTHENTICATE_READ, AWS_EXEC_READ, BUCKET_OWNER_FULL_CONTROL, 
+BUCKET_OWNER_READ, DEFAULT, LOG_DELIVERY_WRITE, PRIVATE (recommended), 
+PUBLIC_READ, PUBLIC_READ_WRITE
+```
+
+### Image Upload Implementation
+
+#### GraphQL Mutations for Upload
+```graphql
+# getImageUploadUrl.gql
+mutation GetImageUploadUrl(
+  $md5: String!, 
+  $suffix: MediaFormat!, 
+  $acl: CannedAccessControlList
+) {
+  imagePresignedUrl(
+    imgMd5Base64: $md5, 
+    imageSuffix: $suffix, 
+    acl: $acl
+  ) {
+    imageId
+    uploadUrl
+    uploadHeaders
+  }
+}
+
+# getFileUploadUrl.gql (for non-image files)
+mutation GetFileUploadUrl(
+  $md5: String!,
+  $suffix: MediaFormat!,
+  $acl: CannedAccessControlList,
+  $filename: String
+) {
+  filePresignedUrl(
+    fileMd5Base64: $md5,
+    fileSuffix: $suffix,
+    acl: $acl,
+    filename: $filename
+  ) {
+    fileId
+    uploadUrl
+    uploadHeaders
+  }
+}
+
+# getVideoUploadUrl.gql (for video files)
+mutation GetVideoUploadUrl(
+  $md5: String!,
+  $suffix: MediaFormat!,
+  $acl: CannedAccessControlList
+) {
+  videoPresignedUrl(
+    videoMd5Base64: $md5,
+    videoSuffix: $suffix,
+    acl: $acl
+  ) {
+    videoId
+    uploadUrl
+    uploadHeaders
+  }
+}
+```
+
+#### Complete Upload Implementation
+```typescript
+import getImageUploadUrlGql from './graphql/getImageUploadUrl.gql';
+import updateUserAvatarGql from './graphql/updateUserAvatar.gql';
+
+class MediaUploadService {
+  /**
+   * Calculate MD5 hash and encode as Base64
+   */
+  private calcFileMd5Base64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const arrayBuffer = e.target?.result as ArrayBuffer;
+        const hash = CryptoJS.MD5(CryptoJS.lib.WordArray.create(arrayBuffer));
+        const base64 = CryptoJS.enc.Base64.stringify(hash);
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  /**
+   * Get file extension and determine MediaFormat
+   */
+  private getMediaFormat(filename: string): string {
+    const ext = filename.split('.').pop()?.toUpperCase();
+    const supportedFormats = [
+      'CSS', 'CSV', 'DOC', 'DOCX', 'GIF', 'HTML', 'ICO', 
+      'JPEG', 'JPG', 'JSON', 'MOV', 'MP3', 'MP4', 'PDF', 
+      'PNG', 'PPT', 'PPTX', 'SVG', 'TXT', 'WAV', 'WEBP', 
+      'XLS', 'XLSX', 'XML'
+    ];
+    return supportedFormats.includes(ext || '') ? ext! : 'OTHER';
+  }
+
+  /**
+   * Upload image file
+   */
+  async uploadImage(file: File, ctx: any): Promise<string> {
+    try {
+      // Step 1: Calculate MD5
+      const md5Base64 = await this.calcFileMd5Base64(file);
+      const mediaFormat = this.getMediaFormat(file.name);
+
+      // Step 2: Get pre-signed URL
+      const res = await ctx.query(getImageUploadUrlGql.loc.source.body, {
+        md5: md5Base64,
+        suffix: mediaFormat,
+        acl: 'PRIVATE' // Recommended for security
+      });
+
+      if (!res?.data?.imagePresignedUrl) {
+        throw new Error('Failed to get upload URL');
+      }
+
+      const { imageId, uploadUrl, uploadHeaders } = res.data.imagePresignedUrl;
+
+      // Step 3: Upload file to object storage
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: uploadHeaders,
+        body: file
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+      }
+
+      // Step 4: Return the image ID for database storage
+      return imageId;
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update user avatar example
+   */
+  async updateUserAvatar(userId: string, avatarFile: File, ctx: any): Promise<void> {
+    // Upload image and get ID
+    const avatarImageId = await this.uploadImage(avatarFile, ctx);
+
+    // Update user profile with image ID
+    await ctx.query(updateUserAvatarGql.loc.source.body, {
+      userId: userId,
+      avatar_image_id: avatarImageId // Store only the ID, not URL
+    });
+  }
+}
+```
+
+### Media Field Constraints & Best Practices
+
+#### Database Field Naming Convention
+- **MUST use `*_id` suffix**: `avatar_image_id`, `cover_image_id`, `attachment_file_id`
+- **Store ONLY the ID**: Never store URLs or file paths in database
+- **Reference by ID**: Use the returned ID from upload mutations
+
+#### Querying Media Fields
+When querying records with media fields, you MUST include subselections:
+
+```graphql
+query GetUserProfile($userId: bigint!) {
+  user_by_pk(id: $userId) {
+    id
+    username
+    
+    # CORRECT: Include subfields for media
+    avatar_image {
+      id
+      url
+      filename
+      file_size
+      created_at
+    }
+    
+    profile {
+      cover_image {
+        id
+        url
+        alt_text
+      }
+      
+      # Multiple images
+      gallery_images {
+        id
+        url
+        filename
+        display_order
+      }
+    }
+  }
+}
+```
+
+#### Error Handling for Media Fields
+```typescript
+// Handle missing media gracefully
+const user = await ctx.query(getUserProfileGql.loc.source.body, { userId });
+const avatarUrl = user?.data?.user_by_pk?.avatar_image?.url || '/default-avatar.png';
+const coverUrl = user?.data?.user_by_pk?.profile?.cover_image?.url || null;
+```
+
+### Advanced Media Operations
+
+#### Batch Upload
+```typescript
+async uploadMultipleFiles(files: File[], ctx: any): Promise<string[]> {
+  const uploadPromises = files.map(file => this.uploadImage(file, ctx));
+  return Promise.all(uploadPromises);
+}
+```
+
+#### File Validation
+```typescript
+validateFile(file: File): boolean {
+  // Size limit (e.g., 10MB)
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error('File size exceeds 10MB limit');
+  }
+  
+  // Type validation
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error('Unsupported file type');
+  }
+  
+  return true;
+}
+```
+
+#### Progress Tracking
+```typescript
+async uploadWithProgress(file: File, onProgress: (percent: number) => void): Promise<string> {
+  // Implementation would use XMLHttpRequest for progress tracking
+  // This is a simplified example
+  const xhr = new XMLHttpRequest();
+  
+  xhr.upload.addEventListener('progress', (e) => {
+    if (e.lengthComputable) {
+      const percent = (e.loaded / e.total) * 100;
+      onProgress(percent);
+    }
+  });
+  
+  // ... rest of upload logic
+}
+```
+
+## 🔍 Advanced Filtering & Querying
+
+### Data Model Overview
+
+GraphQL schema is automatically generated from database schema, external APIs, AI Agent configurations, and Actionflow definitions.
+
+### Column Type Mappings
+
+#### Primitive Column Types
+These types represent fundamental data values and map to GraphQL scalar types:
+
+- `text` -> `String`
+- `integer` -> `Int`
+- `bigint` -> `bigint`
+- `float8` -> `Float8`
+- `decimal` -> `Decimal`
+- `boolean` -> `Boolean`
+- `jsonb` -> `jsonb`
+- `geo_point` -> `geography` (A JSON point structured as `{ "type": "Point", "coordinates": [longitude, latitude] }`)
+- `timestamptz` -> `timestamptz` (Represents a timestamp with time zone)
+- `timetz` -> `timetz` (Represents a time of day with time zone)
+- `date` -> `date` (Represents a calendar date)
+
+#### Column Type Classifications
+1. **Numeric Column Types** (supporting avg and sum aggregation operations): `integer`, `bigint`, `float8`, `decimal`
+2. **Time Column Types**: `timestamptz`, `timetz`, `date`
+3. **Comparable Column Types** (supporting min and max aggregation operations): all numeric column types, time column types, and text types.
+
+#### Composite Column Types (Media Assets)
+
+**Image Type:**
+```graphql
+type FZ_Image {
+  exId: String
+  external: Boolean!
+  id: Long
+  url(acl: CannedAccessControlList, option: ImageProcessOptionInput): String!
+}
+
+input ImageProcessOptionInput {
+  crop(height: Int, offsetX: Int, offsetY: Int, width: Int)
+  resize(height: Int, mode: ResizeMode, width: Int)
+}
+
+enum ResizeMode {
+  FILL
+  FIT
+  CROP
+}
+```
+
+**File Type:**
+```graphql
+type FZ_File {
+  exId: String
+  external: Boolean!
+  id: Long
+  name: String
+  sizeBytes: Int!
+  suffix: String
+  url(acl: CannedAccessControlList, contentType: ContentType): String!
+}
+
+enum ContentType {
+  APPLICATION_FORM_URLENCODED
+  APPLICATION_JAVA_SCRIPT
+}
+```
+
+**Video Type:**
+```graphql
+type FZ_Video {
+  exId: String
+  external: Boolean!
+  id: Long
+  url(acl: CannedAccessControlList): String!
+}
+```
+
+### where Clause Operators
+GraphQL supports comprehensive filtering through boolean expressions using the operator-first pattern:
+
+#### Core Filtering Principles
+
+1. **Operator-First Pattern**: `{ "_eq": { ... } }` not `{ "title": { "_eq": ... } }`
+2. **Type by Final Value**: Choose operand wrapper based on final comparison data type
+3. **Everything is Operand**: Wrap all values in `*_op` input types
+
+#### Comparison Operators
+```javascript
+// Binary operators (generic)
+{ "_eq": { "bigint_operand": { "left_operand": { "column": "id" }, "right_operand": { "literal": "100" } } } }
+
+// Text pattern matching (type-specific)
+{ "_ilike": { "text_operand": { "left_operand": { "column": "title" }, "right_operand": { "literal": "%search%" } } } }
+
+// Array operations
+{ "_in": { "bigint_operand": { "left_operand": { "column": "id" }, "right_operand": { "literal": [1, 2, 3] } } } }
+
+// Null testing (unary)
+{ "_is_null": { "bigint_operand": { "column": "deleted_at" } } }
+
+// JSON operations
+{ "_contains": { "jsonb_operand": { "left_operand": { "column": "metadata" }, "right_operand": { "literal": {"priority": "high"} } } } }
+```
+
+#### Complex Filtering Example
+```json
+{
+  "where": {
+    "_and": [
+      {
+        "_or": [
+          { "_ilike": { "text_operand": { "left_operand": { "column": "title" }, "right_operand": { "literal": "%Recap%" } } } },
+          { "_ilike": { "text_operand": { "left_operand": { "column": "title" }, "right_operand": { "literal": "%Summary%" } } } }
+        ]
+      },
+      {
+        "_eq": {
+          "bigint_operand": {
+            "left_operand": { "extract_timestamptz": { "time": { "column": "created_at" }, "unit": "MONTH" } },
+            "right_operand": { "literal": "12" }
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+### Relationships
+
+#### One-to-One (1:1)
+- `sourceTable` → `targetTable` (via foreign key)
+- GraphQL: `meta: post_meta` in source, `post: post` in target
+
+#### One-to-Many (1:N)  
+- `sourceTable` → multiple `targetTable` records
+- GraphQL: `posts(where, order_by, limit, offset): [post!]!` in source, `author: account` in target
+
+### Logical Operations
+```javascript
+// AND
+{ "_and": [{ "_ilike": { "text_operand": { "left_operand": { "column": "title" }, "right_operand": { "literal": "%search%" } } } }] }
+
+// OR  
+{ "_or": [{ "_ilike": { "text_operand": { "left_operand": { "column": "title" }, "right_operand": { "literal": "%urgent%" } } } }] }
+
+// NOT
+{ "_not": { "_eq": { "text_operand": { "left_operand": { "column": "status" }, "right_operand": { "literal": "deleted" } } } } }
+
+// Relation filters
+{ "author": { "_eq": { "text_operand": { "left_operand": { "column": "name" }, "right_operand": { "literal": "John Doe" } } } } }
+```
+
+### Operands
+
+#### Common Fields
+- **Literal**: `{ "literal": "value" }` or `{ "literal": [1, 2, 3] }`
+- **Column**: `{ "column": "field_name" }`
+- **Conditional**: `{ "conditional": [{ "condition": {...}, "data": {...} }] }`
+
+#### Key Functions
+```json
+// Text functions
+{ "concat": [{ "literal": "Hello " }, { "column": "name" }] }
+{ "substring": { "source_text": { "column": "title" }, "start_index": { "literal": "0" }, "end_index": { "literal": "10" } } }
+{ "upper": { "column": "name" } }
+
+// Bigint functions  
+{ "extract_timestamptz": { "time": { "column": "created_at" }, "unit": "YEAR" } }
+{ "add": { "value0": { "column": "count" }, "value1": { "literal": "1" } } }
+
+// Timestamptz functions
+{ "nullary_func": "now" }
+{ "adjust": { "timestamptz": { "nullary_func": "now" }, "increase": { "literal": true }, "days": { "literal": "7" } } }
+
+// JSON functions
+{ "json_extract_by_dot_notation_jsonpath": { "json": { "column": "metadata" }, "path": { "literal": "user.preferences.theme" } } }
+```
+
+### Sorting
+```javascript
+[{ created_at: "desc" }]
+[{ priority: "desc" }, { created_at: "asc" }]
+[{ author: { name: "asc" } }]
+[{ posts_aggregate: { count: "desc" } }]
+[{ updated_at: "desc_nulls_last" }]
+```
+
+### Constraints & Conflict Resolution
+```graphql
+mutation InsertPost($object: post_insert_input!) {
+  insert_post(
+    objects: [$object], 
+    on_conflict: {
+      constraint: post_email_key,
+      update_columns: [title, content, updated_at]
+    }
+  ) {
+    affected_rows
+    returning { id, title, email }
+  }
+}
+```
+
+### Mutation Input Types
+```graphql
+input post_insert_input {
+  title: String
+  content: String
+  author_account: bigint
+  cover_image_id: bigint
+  post_tags: post_tag_arr_rel_insert_input
+  meta: post_meta_obj_rel_insert_input
+}
+
+input post_set_input {
+  title: String
+  content: String
+  author_account: bigint
+  cover_image_id: bigint
+}
+
+input post_inc_input {
+  author_account: bigint
+}
+
+input post_on_conflict {
+  constraint: post_constraint!
+  update_columns: [post_update_column!]!
+  where: post_bool_exp
+}
+```
+
+### Aggregate Operations
+```graphql
+query GetStats($where: user_bool_exp) {
+  user_aggregate(where: $where) {
+    aggregate {
+      count
+      count(columns: id, distinct: true)
+      avg { age, login_count }
+      max { created_at, last_login }
+      min { created_at, age }
+      sum { post_count, comment_count }
+    }
+    nodes { id, username, created_at }
+  }
+}
+```
+
+### Enums & Functions
+```graphql
+enum date_format_enum_op { DATE, MONTH_DAY, DATE_TIME, DAY_OF_WEEK, MONTH_DAY_YEAR, SHORT_MONTH_DAY_YEAR, RELATIVE_TIME, ISO8601 }
+enum timestamp_format_enum_op { DATE, MONTH_DAY, DATE_TIME, DAY_OF_WEEK, MONTH_DAY_YEAR, SHORT_MONTH_DAY_YEAR, RELATIVE_TIME, ISO8601 }
+enum time_format_enum_op { ISO8601 }
+enum date_unit_enum_op { YEAR, MONTH, DAY }
+enum timestamp_unit_enum_op { YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, MILLISECOND }
+enum time_unit_enum_op { HOUR, MINUTE, SECOND, MILLISECOND }
+enum geo_distance_unit_enum_op { METER, KILOMETER, MILE }
+enum language_enum_op { EN, ZH }
+enum rounding_mode_enum_op { HALF_EVEN, HALF_UP, HALF_DOWN, UP, DOWN, CEILING, FLOOR }
+```
+
+**Notes**: Array indices start at 0. Use `{literal: true}` for boolean values. JSON path uses dot notation.
+
+## Common Issues
+
+### Pagination
+```typescript
+const sanitizePagination = (page: number, pageSize: number) => {
+  const safePageSize = Math.min(Math.max(pageSize, 1), 100);
+  const safePage = Math.max(page, 1);
+  const offset = Math.max(0, (safePage - 1) * safePageSize);
+  return { limit: safePageSize, offset };
+};
+```
+
+### Media Fields
+```graphql
+# WRONG
+query GetUser { user { avatar_image } }
+
+# CORRECT  
+query GetUser { user { avatar_image { id, url, filename } } }
+```
+
+### Schema Sync
+```typescript
+const schema = await mcp_zion_get_schema({ token: authToken, projectExId: projectId });
+```
+
+## Best Practices
+
+### Query Optimization
+```graphql
+# Good - Only select needed fields
+query GetUsers { user(limit: 10) { id, username, email } }
+
+# Avoid - Selecting everything
+query GetUsers { user(limit: 10) { id, username, email, profile { ... }, posts { ... } } }
+```
+
+### Error Handling
+```typescript
+class GraphQLService {
+  async query(gqlQuery: string, variables: any = {}) {
+    try {
+      const response = await ctx.query(gqlQuery, variables);
+      if (response?.errors?.length > 0) {
+        throw new Error(`GraphQL Error: ${response.errors[0].message}`);
+      }
+      return response;
+    } catch (error) {
+      console.error('GraphQL Query Failed:', { query: gqlQuery, variables, error: error.message });
+      throw error;
+    }
+  }
+}
+```
+
+### Security
+```typescript
+const validateSearchInput = (searchTerm: string): string => {
+  const sanitized = searchTerm.replace(/[%_]/g, '\\$&').trim().substring(0, 100);
+  return `%${sanitized}%`;
+};
+```
+
+---
+
+**Note**: This file focuses on GraphQL technical standards. For development workflow and code standards, refer to the corresponding specialized files.

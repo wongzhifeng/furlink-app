@@ -1,0 +1,370 @@
+---
+alwaysApply: false
+description: Zion代码组件14步开发执行流程，包含环境配置、项目管理、代码实现和发布部署
+---
+
+# Zion 代码组件开发执行流程
+
+## 🎯 流程目标
+
+通过14步标准化流程，自动化完成Zion代码组件的完整开发周期：从开发环境配置、项目初始化、组件开发实现，到Zion实时预览调试验证，最终发布上线，确保组件严格遵循Zion平台规范并实现无缝集成。
+
+## 🛡️ 核心约束
+
+### 目录唯一性原则
+- 所有开发活动必须在Zion 初始化项目目录内进行
+- 禁止跨目录、跨项目操作
+- 不能擅自添加模拟数据或精简功能
+
+## 🔧 14步标准执行流程
+
+### Step 1: 验证开发环境并确保登录状态
+
+**目标**: 验证开发环境并确保登录状态
+
+**步骤概览**:
+- 系统环境检测（Windows/macOS）
+- Node.js 及 npm 验证是否安装，未安装执行安装指令（v20.19.4）
+- Functorz CLI 执行安装指令
+- tsx 执行安装指令
+- functorz CLI登录验证
+
+**执行逻辑**:
+1. **系统环境检测**: 使用`os.platform()`检测操作系统类型，区分Windows('win32')和macOS('darwin')，为后续安装命令选择正确的执行方式
+2. **Node.js版本验证与安装**: 执行`node --version`检查当前版本，是否大于v20.19.4，版本不符则调用`installNode()`函数进行安装
+3. **npm镜像配置**: 执行`npm config set registry https://registry.npmmirror.com/`设置国内镜像源，提高依赖安装速度
+4. **tsx工具安装**: 执行`npm i -g tsx`进行全局安装
+5. **Functorz CLI安装**: 执行`npm i -g functorz`进行全局安装
+6. **用户登录验证**: 执行`functorz signin ${email} ${password} -v`使用用户凭据登录，确保后续操作权限正常
+
+
+### Step 2: 检查当前项目与项目初始化
+
+**目标**: 检测当前文件夹及父目录内是否存在 zion 有效项目，决定是否创建新项目
+
+**步骤概览**:
+- 检查当前目录是否有效Zion项目
+- 如果当前目录不是有效项目，检查父目录中的有效Zion项目
+- 根据检测结果决定项目初始化策略
+
+**执行逻辑**:
+1. **当前目录检测**: 使用`fs.existsSync()`检查`./package.json`、`./src`、`./src/components`三个关键路径
+2. **父目录扫描**: 如果当前目录不是有效项目，扫描父目录中的子目录，查找有效Zion项目
+3. **项目选择处理**: 
+   - 如果发现多个有效项目，展示有效项目列表询问用户选择使用哪个项目（优先）
+   - 如果只发现一个有效项目，询问用户是否使用该项目（优先）
+   - 如果没有发现有效项目，直接新建项目
+4. **项目创建决策**: 
+   - 用户选择新建项目时，执行`functorz create ${projectName}`初始化新项目
+   - 项目名格式：`${componentName.toLowerCase()}-component`
+   — 若初始化新项目报错，重命名（项目名称）后再初始化，初始化成功后才可以执行后续开发计划
+5. **目录切换**: 初始化项目成功后，执行`process.chdir('./${projectName}')`切换到新的项目目录
+
+
+### Step 3: 依赖安装检查并补充 package.json项目基础信息
+
+**目标**: 安装项目依赖并验证项目环境，补充package.json项目基础信息
+
+**步骤概览**:
+- 确认在当前Zion 初始化项目目录内
+- 补充package.json项目基础信息（name、description、version等）
+- 检查package-lock.json
+- 若缺少依赖则执行npm install
+
+**执行逻辑**:
+1. **项目环境验证**: 使用`fs.existsSync('./package.json')`检查当前目录是否存在package.json文件，确认这是一个有效的Zion项目
+2. **package.json基础信息补充**: 
+   - 读取现有package.json文件
+   - 补充`name`字段：使用项目名称（如：`${componentName.toLowerCase()}-component`）
+   - 补充`description`字段：基于项目内所有的组件功能描述
+   - 保存修改后的package.json文件
+3. **依赖锁定文件检查**: 使用`fs.existsSync('package-lock.json')`检查是否存在锁定文件
+4. **条件性依赖安装**: 只有当缺少锁定文件时才执行`npm install`安装依赖
+
+
+### Step 4: 通过 Zion MCP 获取项目配置流程
+
+**目标**: 基于开发计划判断是否执行此步骤，若执行则获取 token 和项目schema，并保存在当前 zion 初始化项目目录中
+
+**触发条件**：
+- 组件需要绑定具体项目数据字段时执行
+- 组件需要GraphQL查询时执行
+- 组件为纯UI组件时跳过此步骤
+
+**步骤概览**:
+- 检查.zion/schema.json是否存在
+- 处理认证token
+- 获取项目列表和schema
+- 存储配置信息
+
+**执行逻辑**:
+1. **配置文件路径设置**: 使用`path.join()`构建`.zion/schema.json`和`.zion/zion_credentials.json`的完整路径，确保配置信息能够正确保存
+2. **项目列表获取**: 调用`mcp_zion_get_projects({ token: authToken })`获取用户可访问的项目列表
+3. **Schema数据获取**: 调用`mcp_zion_get_schema({ token: authToken, projectExId: selectedProjectId })`获取指定项目的GraphQL schema配置，用于后续组件开发时的数据字段匹配
+
+
+### Step 5: 开发需求解析确认流程
+
+**目标**: 根据开发需求明确组件开发目标
+
+**步骤概览**:
+- 解析用户需求
+- 确定组件名称、功能、props结构
+- 验证需求与schema匹配性
+- 确定技术选型（UI库、动画库、图标库等）
+
+
+## 🛡️ 工作目录管理
+
+### 核心原则
+- **每次文件操作前验证目录**
+- **使用绝对路径避免相对路径问题**
+- **显示当前状态让用户确认**
+
+### 验证步骤
+在每次文件操作前执行：`pwd && ls -la package.json src/`
+
+### 文件操作规范
+- 使用绝对路径：`/完整路径/src/components/组件名/文件名`
+- 避免相对路径：`./src/components/组件名/文件名`
+
+
+### Step 6: 文件目录生成流程
+
+**目标**: 在当前Zion 初始化项目目录内生成标准化组件目录结构
+
+**步骤概览**:
+- 在[Zion 初始化项目目录]/src/components/[组件名]/下创建目录
+- 生成主文件、样式、导出文件
+- 创建GraphQL目录
+
+**样式设计建议**:
+- 使用Emotion进行样式管理
+- 使用Framer Motion添加动画效果
+- 使用Lucide React提供图标支持
+- 结合现代CSS特性（Grid、Flexbox、CSS变量）
+- 根据开发计划决定是否引用第三方图标库
+
+**执行逻辑**:
+1. **工作目录确认**: 执行`process.chdir(projectPath)`确保在正确的Zion 初始化项目路径中，避免文件创建到错误位置
+2. **组件目录创建**: 使用`path.join(projectPath, 'src', 'components', componentName)`构建路径，`fs.mkdirSync(componentDir, { recursive: true })`递归创建组件目录
+3. **标准文件结构生成**: 创建以下文件路径：
+   - `${componentName}.tsx` (主组件文件)
+   - `style.module.scss` (样式文件)
+   - `index.ts` (导出文件)
+4. **GraphQL目录创建**: 使用`fs.mkdirSync(graphqlDir, { recursive: true })`创建`graphql`子目录，用于存放相关的查询和变更定义
+
+
+### Step 7: 代码开发流程
+
+**唯一工作目录**：[Zion 初始化项目目录]/src/components/[组件名]/
+**目标**: 在工作目录内遵循 @zion-code-standards.mdc（代码规范） @zion-graphql-schema-guide.mdc（Zion平台GraphQL架构指南） 完成组件核心逻辑开发
+
+**步骤概览**:
+- 确保在当前 zion 初始化项目目录内执行
+- 实现三段式interface（PropData、StateData、Event、Props）
+- 遵循导出规范，禁止export default
+- 使用useAppContext获取ctx
+- 媒体上传字段命名*_id
+- React约束：显式导入React
+
+**执行逻辑**:
+1. **工作目录锁定**: 执行`process.chdir(projectPath)`确保所有代码开发操作都在指定的组件目录内进行，避免文件散乱
+2. **三段式接口规范**: 必须定义三个核心接口：
+   - `PropData`接口：定义组件属性数据结构
+   - `StateData`接口：定义组件状态数据结构，使用`State<T>`类型
+   - `Event`接口：定义事件处理器，使用`EventHandler`类型
+3. **组件Props整合**: 创建统一的`Props`接口，包含`propData`、`propState`、`event`三个属性，确保组件接收完整的参数结构
+4. **React规范遵循**: 必须显式`import React from 'react'`，使用`useAppContext()`获取平台上下文，确保组件与Zion平台正确集成
+5. **导出规范**: 使用`export const ComponentName`命名导出，禁止`export default`，符合Zion平台的组件识别规范
+
+
+### Step 8: 将组件按规范导出到项目内的主入口，确保Zion能自动识别
+
+**目标**: 将新组件按规范导出到当前Zion初始化项目内的主入口，确保平台能自动识别
+
+**步骤概览**:
+- 主入口以对象方式导出组件
+- 在src/App.tsx中引入并渲染组件
+
+**执行逻辑**:
+1. **组件导入**: 在`src/components/index.ts`中使用`import { ComponentName } from './ComponentName'`导入新开发的组件，确保组件能够被正确引用
+2. **对象导出**: 使用`export default { ComponentName }`对象形式导出，这是Zion平台识别组件的标准方式
+3. **主入口更新**: 将新组件添加到项目的主入口文件中，确保平台能够自动发现和加载组件
+
+
+### Step 9: 代码合规校验流程
+
+**目标**：自动检测代码风格、语法、类型、props、三段式、导出、API、媒体上传、安全检查、样式系统、React Hooks等是否完全符合平台规范，发现问题自动修正。
+
+**执行逻辑**:
+1. **代码风格检查**: 执行`npm run lint`命令检查代码格式、命名规范、语法错误等问题
+2. **类型安全验证**: 检查TypeScript类型定义是否正确，确保类型安全
+3. **规范合规性检查**: 自动检测组件是否符合Zion平台的三段式接口、导出规范、API调用等要求
+4. **安全检查验证**: 检查propState访问、外部API调用、null引用等安全问题
+5. **样式系统检查**: 验证CSS Modules使用是否正确
+6. **React Hooks检查**: 验证Hooks使用和依赖数组设置是否正确
+7. **自动修复机制**: 发现可自动修复的问题时，自动应用修复方案
+
+**检查清单**:
+- [ ] 语法和类型检查通过
+- [ ] ESLint检查通过
+- [ ] propState访问安全检查
+- [ ] 外部API调用安全检查
+- [ ] CSS Modules使用正确
+- [ ] React Hooks依赖数组正确
+- [ ] 无限渲染问题检查
+
+
+### Step 10: 代码组件打包流程执行watch:build 
+
+**目标**: 在当前初始化 zion项目内运行打包核心命令本地构建组件，监听本地源代码发生的变化，当编辑保存后，自动运行打包核心命令。
+
+**步骤概览**:
+- 清理旧服务进程和端口占用
+- 清除构建缓存确保干净构建
+- 使用screen管理watch:build服务
+- 验证服务启动状态
+
+**执行逻辑**:
+1. **工作目录确认**: 执行`cd 当前项目目录`确保在正确的项目目录中
+2. **旧服务清理**: 
+   - 执行`pkill -f "npm run watch:build"`终止旧构建服务进程
+   - 执行`lsof -ti:6326 | xargs kill -9`释放端口6326资源，避免端口冲突
+3. **缓存清理**: 执行`rm -rf dist node_modules/.cache .vite`删除构建缓存和临时文件，确保构建环境干净
+4. **后台服务启动**: 执行`screen -dmS watch-build npm run watch:build`使用screen会话管理构建监听服务，支持断线重连
+5. **服务状态验证**: 执行`sleep 3 && screen -list | grep "watch-build"`检查服务启动状态，确保构建监听功能正常工作
+
+### Step 11: 生成代码组件帮助文档与resources资源
+
+**目标**: 自动生成项目README.md和组件README.md并保存，然后创建resources资源文件
+
+**步骤概览**:
+- 生成项目根目录README.md
+- 生成组件README.md文档
+- 创建resources资源目录结构
+- 生成资源文件模板
+
+**执行逻辑**:
+1. **工作目录确认**: 执行`process.chdir(projectPath)`确保在正确的Zion初始化项目路径中
+2. **组件README.md生成**:
+   - 构建组件文档路径：`src/components/${componentName}/README.md`
+   - 生成完整的组件文档，包含以下章节：
+     - 组件简介：功能描述、技术特点
+     - 属性与事件说明：PropData、StateData、Event详细说明
+     - 平台配置：Zion平台相关配置说明
+     - GraphQL说明：数据查询相关说明（如适用）
+     - 媒体上传说明：文件上传字段说明（如适用）
+     - 样式自定义：CSS变量、主题配置说明
+     - 常见问题：FAQ和故障排除
+3. **项目README.md生成**: 
+   - 检查初始化项目根目录是否存在README.md，若存在则新增组件README.md文档中所有信息
+   - 若不存在则创建项目README.md
+   - 包含初始化项目目录下所有组件的README.md文档中信息
+4. **resources资源目录创建**:
+   - 检查`resources`目录是否存在，不存在则创建
+   - 创建组件资源子目录：`resources/${componentName}/` （保持与组件名称大小写一致）
+5. **资源文件模板生成**:
+   - 根据开发需求和组件功能特点，自行设计并渲染相应的SVG资源文件
+   - 创建`resources/icon.svg`：组件包图标模板（24x24），根据组件核心功能设计
+   - 创建`resources/${componentName}/icon.svg`：组件图标模板（72x54），体现组件特色
+   - 创建`resources/${componentName}/canvas.svg`：画布预览图模板（300x200），展示组件在画布中的效果
+   - 创建`resources/${componentName}/cover.svg`：市场封面图模板（200x150），用于插件市场展示
+   - 所有资源文件仅支持svg格式，严格遵循命名规范，内容需与组件功能高度匹配、风格简洁
+
+
+### Step 12: 代码组件测试发布（用于Zion编辑器调试）
+
+**目标**: 使用发布核心命令成功发布代码组件至 zion 组件库，只有成功发布至 zion 组件库一次才可以在 zion 编辑器内调试代码组件
+
+**执行逻辑**:
+1. **发布命令执行**: 执行`functorz publish_compatible --verbose`使用functorz CLI工具发布组件
+2. **详细输出模式**: 使用`--verbose`参数显示详细的发布过程信息，便于问题排查
+   - 组件发布失败提示“Error_BuildProjectError”同时Step 2: 检查当前项目与项目初始化失败：更换项目名称重新初始化项目
+   - 组件发布失败提示“Error_DataConfigNotDeclared”：说明代码组件有问题需要修复
+   - 组件发布若出现其他问题，根据报错结果自行尝试修复
+3. **组件库上传**: 将构建好的组件包上传到Zion平台的组件库中
+4. **遵循 zion 代码组件核心规范进行修复**
+
+
+
+
+### Step 13: 在预览模式下结合 Zion 实时预览调试并修复代码组件（仅修复不发布）
+
+**目标**: 执行预览命令，提示用户在 zion 编辑器内调试代码组件，并修复用户提交的问题，修复完成后无需再执行其他命令，若为微信小程序代码组件，需要额外提示用户更新预览在手机上测试或者在微信开发者工具内测试
+
+**步骤概览**:
+- 清理旧预览服务确保端口可用
+- 使用screen管理preview服务
+- 验证预览服务状态
+- 提示用户在Zion编辑器中添加组件，小程序组件额外提示用户更新预览在手机上测试或者在微信开发者工具内测试
+- 用户报错修复流程（用户未确认代码组件无问题绝对禁止自动发布）
+
+**执行逻辑**:
+1. **工作目录确认**: 执行`cd 当前项目目录`确保在正确的项目目录中
+2. **旧服务清理**: 
+   - 执行`screen -S preview -X quit`终止旧预览服务
+   - 执行`lsof -ti:6327 | xargs kill -9`释放端口6327资源，避免端口冲突
+3. **预览服务启动**: 执行`screen -dmS preview npm run preview`使用screen会话管理预览服务，提供稳定的HTTP访问服务
+5. **端口范围控制**: 确保预览服务运行在指定的端口范围内（6327-6335）
+6. **修复流程**: 分析错误 → 修复代码（修复完成禁止发布） → 等待用户验证
+
+
+### Step 14: 代码组件正式发布（用户确认无问题后）
+
+**目标**:  等待用户 结合 Zion 实时预览调试代码组件阶段 确认无问题再将代码组件正式发布上线
+
+**严格约束**:
+- **禁止自动发布**：任何情况下都不能在用户未确认时自动发布
+
+**步骤概览**:
+- 若执行发布指令时提示版本号重复问题（REPO_VERSION_DUPLICATE）执行升级版本号核心命令
+- 若出现其他报错，根据报错信息结合代码组件核心规范就行修复，修复完成后监听自动重新构建服务成功状态，等待用户确认后才可以重新发布
+
+**执行逻辑**:
+1. **版本冲突处理**: 遇到`REPO_VERSION_DUPLICATE`错误时，执行`npm version patch`升级版本号
+2. **版本号递增**: 使用patch级别递增版本号，确保每次发布都有唯一版本标识
+3. **正式发布执行**: 执行`functorz publish --verbose`将组件正式发布到Zion平台
+4. **错误处理机制**: 遇到其他类型错误时，根据错误信息进行相应修复后，修复完成后必须等待用户确认才能重新发布
+
+
+## 🔄 异常处理机制
+
+### 常见异常类型及处理
+
+1. **环境异常**: 自动重新登录，网络重试3次
+2. **项目异常**: 自动重命名，最多尝试5次
+3. **代码异常**: 结合代码组件规范自动修复语法和类型错误
+4. **发布异常**: 根据报错结果若提示版本重复则升级版本号，若出现其他报错进行修复
+
+
+## ⚠️ 关键约束提醒
+
+### 预览指令规范
+- **禁止**: 使用`npx vite preview`或`vite preview`预览指令
+- **必须**: 在项目目录内使用`npm run preview`
+- **端口**: 限定在6327-6335范围
+
+### 常见问题处理
+1. **React未定义**: 确保每个.tsx文件导入React，或检查vite.config.ts中的external配置是否正确
+2. **preview脚本缺失**: 确保在正确项目目录执行
+3. **版本冲突**: 自动执行npm version patch
+4. **GraphQL字段错误**: 严格对齐schema字段名
+
+### Vite配置规范
+**构建配置要求**:
+- **preview模式兼容**: 移除`rollupOptions.external`配置，确保React正常打包
+- **推荐配置**:
+```typescript
+build: {
+  rollupOptions: {
+    // 移除external配置，让React正常打包
+    plugins: [],
+  },
+}
+```
+**原因**: preview模式下外部依赖无法正确提供，导致React未定义错误
+
+---
+
+**注意**: 本文件专注开发执行流程，代码规范和GraphQL详情请参考对应专业文件。
