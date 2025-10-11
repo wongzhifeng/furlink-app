@@ -6,18 +6,6 @@ import { resolve } from 'path'
 export default defineConfig({
   plugins: [
     react({
-      // React插件优化
-      babel: {
-        plugins: [
-          // 生产环境移除console
-          process.env.NODE_ENV === 'production' && [
-            'transform-remove-console',
-            { exclude: ['error', 'warn'] }
-          ]
-        ].filter(Boolean)
-      },
-      // 开发时热更新优化
-      fastRefresh: true,
       // JSX运行时优化
       jsxRuntime: 'automatic'
     })
@@ -32,12 +20,12 @@ export default defineConfig({
     hmr: {
       overlay: true
     },
-    // 代理配置
+    // 代理配置 - 指向Zion后端
     proxy: {
       '/api': {
-        target: 'https://furlink-backend-m9k2.zeabur.app',
+        target: 'http://localhost:8081', // 本地Zion后端
         changeOrigin: true,
-        secure: true
+        secure: false
       }
     }
   },
@@ -169,20 +157,7 @@ export default defineConfig({
   // CSS优化
   css: {
     // CSS代码分割
-    devSourcemap: false,
-    // PostCSS配置
-    postcss: {
-      plugins: [
-        // 自动添加浏览器前缀
-        require('autoprefixer')({
-          overrideBrowserslist: [
-            'last 2 versions',
-            '> 1%',
-            'not dead'
-          ]
-        })
-      ]
-    }
+    devSourcemap: false
   },
   
   // 解析配置

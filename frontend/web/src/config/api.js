@@ -2,59 +2,73 @@
 // 支持Zeabur和Zion双平台后端服务
 
 export const API_CONFIG = {
-  // 平台配置
+  // 平台配置 - 新架构：Zeabur前端 + Zion后端
   platforms: {
-    zeabur: {
-      name: 'Zeabur',
-      baseUrl: 'https://furlink-backend-m9k2.zeabur.app',
-      status: 'deployed',
-      features: ['基础API', '健康检查', '性能监控'],
-      priority: 2 // 备用优先级
-    },
     zion: {
       name: 'Zion',
-      baseUrl: 'http://localhost:8081', // 本地测试，部署后改为Zion URL
-      status: 'testing',
-      features: ['完整API', '数据库集成', '用户管理', '地理位置', '权限系统'],
-      priority: 1 // 主要优先级
+      baseUrl: process.env.NODE_ENV === 'production' 
+        ? 'https://your-zion-backend-url.zion.com' // 部署后更新为实际Zion URL
+        : 'http://localhost:8081', // 本地开发
+      status: 'primary',
+      features: ['完整API', '数据库集成', '用户管理', '地理位置', '权限系统', '宠物管理', '紧急寻回'],
+      priority: 1 // 唯一后端服务
     }
   },
 
-  // 环境配置
+  // 环境配置 - 新架构：只有Zion后端
   environments: {
     development: {
       primary: 'zion',
-      fallback: 'zeabur',
       timeout: 5000
     },
     production: {
       primary: 'zion',
-      fallback: 'zeabur',
       timeout: 10000
     }
   },
 
-  // API端点配置
+  // API端点配置 - FurLink宠物平台
   endpoints: {
+    // 系统端点
     health: '/api/health',
     metrics: '/api/metrics',
     zionInfo: '/api/zion/info',
     zionData: '/api/zion/data',
-    // 通用端点
+    
+    // 用户管理
+    users: '/api/users',
+    auth: '/api/auth',
+    profile: '/api/profile',
+    
+    // 宠物管理
     pets: '/api/pets',
+    petProfile: '/api/pets/profile',
+    petPhotos: '/api/pets/photos',
+    
+    // 紧急寻回
     emergency: '/api/emergency',
+    alerts: '/api/alerts',
+    search: '/api/search',
+    
+    // 服务管理
     services: '/api/services',
-    users: '/api/users'
+    nearby: '/api/services/nearby',
+    bookings: '/api/bookings',
+    
+    // 地理位置
+    locations: '/api/locations',
+    provinces: '/api/locations/provinces',
+    cities: '/api/locations/cities',
+    districts: '/api/locations/districts'
   }
 };
 
-// 服务选择器
+// 服务选择器 - 简化版：只有Zion后端
 export class ServiceSelector {
   constructor(environment = 'development') {
     this.environment = environment;
     this.config = API_CONFIG.environments[environment];
-    this.currentPlatform = this.config.primary;
-    this.fallbackPlatform = this.config.fallback;
+    this.currentPlatform = this.config.primary; // 只有'zion'
   }
 
   // 获取当前平台配置
@@ -99,61 +113,39 @@ export class ServiceSelector {
     }
   }
 
-  // 自动切换平台
-  async switchToFallback() {
-    if (this.currentPlatform === this.config.primary) {
-      console.log(`Switching from ${this.currentPlatform} to ${this.config.fallback}`);
-      this.currentPlatform = this.config.fallback;
-      return true;
-    }
-    return false;
-  }
-
-  // 智能API调用
+  // API调用 - 简化版
   async apiCall(endpoint, options = {}) {
-    const maxRetries = 2;
-    let lastError;
+    try {
+      const url = this.buildApiUrl(endpoint);
+      const response = await fetch(url, {
+        ...options,
+        timeout: this.config.timeout
+      });
 
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        const url = this.buildApiUrl(endpoint);
-        const response = await fetch(url, {
-          ...options,
-          timeout: this.config.timeout
-        });
-
-        if (response.ok) {
-          return await response.json();
-        }
-
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      } catch (error) {
-        lastError = error;
-        console.warn(`API call failed (attempt ${attempt + 1}):`, error);
-
-        // 尝试切换到备用平台
-        if (attempt === 0 && await this.switchToFallback()) {
-          continue;
-        }
+      if (response.ok) {
+        return await response.json();
       }
-    }
 
-    throw lastError;
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    } catch (error) {
+      console.error(`API call failed for ${endpoint}:`, error);
+      throw error;
+    }
   }
 }
 
-// 服务状态监控
+// 服务状态监控 - 简化版：只监控Zion后端
 export class ServiceMonitor {
   constructor(serviceSelector) {
     this.serviceSelector = serviceSelector;
-    this.healthStatus = new Map();
+    this.healthStatus = { zion: { healthy: false, status: 'unknown' } };
     this.monitoringInterval = null;
   }
 
   // 开始监控
   startMonitoring(intervalMs = 30000) {
     this.monitoringInterval = setInterval(async () => {
-      await this.checkAllServices();
+      await this.checkZionService();
     }, intervalMs);
   }
 
@@ -165,42 +157,20 @@ export class ServiceMonitor {
     }
   }
 
-  // 检查所有服务
-  async checkAllServices() {
-    const platforms = Object.keys(API_CONFIG.platforms);
-    
-    for (const platform of platforms) {
-      const originalPlatform = this.serviceSelector.currentPlatform;
-      this.serviceSelector.currentPlatform = platform;
-      
-      const health = await this.serviceSelector.checkHealth();
-      this.healthStatus.set(platform, health);
-      
-      this.serviceSelector.currentPlatform = originalPlatform;
-    }
+  // 检查Zion服务
+  async checkZionService() {
+    const health = await this.serviceSelector.checkHealth();
+    this.healthStatus.zion = health;
   }
 
   // 获取服务状态
   getServiceStatus() {
-    return Object.fromEntries(this.healthStatus);
+    return this.healthStatus;
   }
 
-  // 获取最佳服务
+  // 获取最佳服务（只有Zion）
   getBestService() {
-    const statuses = this.getServiceStatus();
-    
-    // 优先选择健康的Zion服务
-    if (statuses.zion?.healthy) {
-      return 'zion';
-    }
-    
-    // 其次选择健康的Zeabur服务
-    if (statuses.zeabur?.healthy) {
-      return 'zeabur';
-    }
-    
-    // 默认返回当前平台
-    return this.serviceSelector.currentPlatform;
+    return this.healthStatus.zion?.healthy ? 'zion' : 'zion';
   }
 }
 
@@ -222,7 +192,7 @@ export const checkHealth = async () => {
   return await defaultServiceSelector.checkHealth();
 };
 
-// 获取服务信息
+// 获取服务信息 - 简化版
 export const getServiceInfo = () => {
   const currentPlatform = defaultServiceSelector.getCurrentPlatform();
   const serviceStatus = defaultServiceMonitor.getServiceStatus();
@@ -233,7 +203,7 @@ export const getServiceInfo = () => {
       ...currentPlatform
     },
     status: serviceStatus,
-    best: defaultServiceMonitor.getBestService()
+    best: 'zion' // 只有Zion后端
   };
 };
 

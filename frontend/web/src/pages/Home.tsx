@@ -5,9 +5,8 @@ import { checkHealth, getServiceInfo } from '../config/api.js'
 
 // 优化后的Home组件
 export const Home: React.FC = memo(() => {
-  // 服务状态监控
+  // 服务状态监控 - 新架构：只有Zion后端
   const [serviceStatus, setServiceStatus] = useState({
-    zeabur: { healthy: false, status: 'unknown' },
     zion: { healthy: false, status: 'unknown' }
   });
   const [currentService, setCurrentService] = useState('zion');
