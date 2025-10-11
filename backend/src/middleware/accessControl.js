@@ -1,53 +1,20 @@
-const path = require('path');
+// FurLink 访问控制中间件
+// 简化版本，专注于基础功能
 
-// 简单访问控制：限制静态uploads访问，仅允许images子目录读取 - 优化56: 增强输入验证和错误处理
-function uploadsAccessControl(req, res, next) {
-  try {
-    // 优化56: 输入验证
-    if (!req || !res || !next) {
-      return res.status(500).json({ 
-        success: false, 
-        message: '访问控制中间件参数错误',
-        timestamp: new Date().toISOString()
-      });
-    }
+export const accessControl = (req, res, next) => {
+  // 设置CORS头
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
 
-    const requestedPath = req.path || '';
-    
-    // 优化56: 增强路径验证
-    if (typeof requestedPath !== 'string') {
-      return res.status(400).json({ 
-        success: false, 
-        message: '请求路径格式错误',
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    // 仅允许访问 /images/* 或根索引
-    if (requestedPath === '/' || requestedPath.startsWith('/images/')) {
-      return next();
-    }
-    
-    return res.status(403).json({ 
-      success: false, 
-      message: '禁止访问该资源',
-      timestamp: new Date().toISOString()
-    });
-  } catch (e) {
-    console.error('Access control error:', e);
-    return res.status(500).json({ 
-      success: false, 
-      message: '访问控制错误',
-      timestamp: new Date().toISOString()
-    });
+  // 处理预检请求
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
   }
-}
 
-module.exports = { uploadsAccessControl };
+  // 记录请求
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
 
-
-
-
-
-
-
+  next();
+};

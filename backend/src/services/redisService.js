@@ -1,4 +1,4 @@
-const redis = require('redis');
+import redis from 'redis';
 
 class RedisService {
   constructor() {
@@ -278,5 +278,5 @@ class RedisService {
 // 创建单例实例
 const redisService = new RedisService();
 
-module.exports = redisService;
+export { redisService };
 

@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const redisService = require('../services/redisService');
+import mongoose from 'mongoose';
+import { redisService } from './redisService.js';
 
 class DatabaseService {
   constructor() {
@@ -234,5 +234,5 @@ class DatabaseService {
 // 创建单例实例
 const databaseService = new DatabaseService();
 
-module.exports = databaseService;
+export { databaseService };
 
