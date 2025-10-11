@@ -16,7 +16,7 @@ env:
   ZION_PROJECT_ID: "KrABb5Mb0qw"
   ZION_DATABASE_ID: "mgm6x7a6"
   ZION_API_BASE_URL: "https://api.zion.com"
-  ZION_API_KEY: "your-zion-api-key"
+  ZION_API_KEY: "mgm6x7a6"
   # JWT_SECRET: "your_jwt_secret_key" # 生产环境请务必设置
   # MONGODB_URL: "your_mongodb_connection_string" # 生产环境请务必设置
   # REDIS_URL: "your_redis_connection_string" # 生产环境请务必设置

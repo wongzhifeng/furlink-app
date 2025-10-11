@@ -32,7 +32,7 @@ const ZION_CONFIG = {
   projectId: 'KrABb5Mb0qw', // Furlink-app项目ID
   databaseId: 'mgm6x7a6', // 数据库ID
   apiBaseUrl: process.env.ZION_API_BASE_URL || 'https://api.zion.com',
-  apiKey: process.env.ZION_API_KEY || 'your-zion-api-key'
+  apiKey: process.env.ZION_API_KEY || 'mgm6x7a6'
 };
 
 // 安全中间件 - Zion优化版本

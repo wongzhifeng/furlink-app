@@ -517,6 +517,7 @@ FurLink 是一个基于 FluLink 核心架构的宠物垂直社交平台，通过
 - **项目名称**: Furlink-app
 - **项目ID**: KrABb5Mb0qw
 - **数据库ID**: mgm6x7a6
+- **API密钥**: mgm6x7a6 (已配置，不会上传Git)
 - **账号**: vx18668020218@qq.com
 
 ### 🗄️ 数据库结构
@@ -542,7 +543,21 @@ FurLink 是一个基于 FluLink 核心架构的宠物垂直社交平台，通过
 ### 🎯 部署状态
 - ✅ **Zeabur前端**: https://furlink-frontend.zeabur.app/
 - ✅ **Zeabur后端**: https://furlink-backend-m9k2.zeabur.app/
-- 🔄 **Zion后端**: 配置完成，待部署
+- ✅ **Zion后端**: 本地测试成功 (http://localhost:8081)
+
+### 🧪 Zion后端测试结果
+- ✅ **健康检查**: `/api/health` - 服务状态正常
+- ✅ **性能指标**: `/api/metrics` - 性能监控正常
+- ✅ **Zion信息**: `/api/zion/info` - 项目信息正确
+- ✅ **数据查询**: `/api/zion/data/account` - 数据库连接正常
+- ✅ **根路径**: `/` - 服务信息完整
+
+### 📊 Zion后端性能数据
+- **内存使用**: 11MB (3%使用率)
+- **响应时间**: 平均16ms
+- **错误率**: 0%
+- **运行时间**: 17秒
+- **请求计数**: 3次
 
 ---
 

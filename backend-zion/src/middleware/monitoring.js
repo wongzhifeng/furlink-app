@@ -1,7 +1,7 @@
 // FurLink 监控中间件 - 超高性能版本
 // 宠物紧急寻回平台后端服务 - 实时性能监控
 
-import logger from './logger.js';
+import logger from '../utils/logger.js';
 
 // 性能监控数据存储
 const performanceMetrics = {
