@@ -1,26 +1,18 @@
-# FurLink Web前端 Docker 忽略文件 - 简化版
+# FurLink Web前端 Docker 忽略文件 - 最小化版本
 
 # 依赖目录
 node_modules
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# 环境文件
-.env*
 
 # 构建输出
 dist
 build
 
-# 日志文件
-*.log
+# 环境文件
+.env*
 
 # IDE文件
 .vscode
 .idea
-*.swp
-*.swo
 
 # OS生成的文件
 .DS_Store
