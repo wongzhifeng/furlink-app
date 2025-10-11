@@ -1,7 +1,7 @@
 {
   "name": "furlink-web",
   "version": "1.0.0",
-  "description": "FurLink Web Frontend - Pet Emergency Platform - Ultra Performance Optimized",
+  "description": "毛茸茸 - 宠物紧急寻回平台，0延迟传播，智能服务匹配",
   "main": "index.js",
   "type": "module",
   "scripts": {

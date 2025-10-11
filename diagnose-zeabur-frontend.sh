@@ -66,10 +66,10 @@ check_frontend_status() {
         log_error "✗ 检测到FluLink代码 (错误项目)"
         log_warning "Zeabur可能连接到了错误的Git仓库"
         log_warning "当前部署: $title"
-        log_warning "预期部署: FurLink - 毛茸茸链接"
+        log_warning "预期部署: 毛茸茸"
         return 2
-    elif [[ "$title" == *"FurLink"* ]]; then
-        log_success "✓ 检测到正确版本FurLink代码"
+    elif [[ "$title" == *"毛茸茸"* ]]; then
+        log_success "✓ 检测到正确版本毛茸茸代码"
         return 0
     else
         log_warning "⚠ 无法确定代码版本"
@@ -133,7 +133,7 @@ check_local_build() {
     local local_title=$(cat "$frontend_dir/dist/index.html" | grep -o '<title>[^<]*</title>' | sed 's/<[^>]*>//g')
     log_info "本地构建标题: $local_title"
     
-    if [[ "$local_title" == *"FurLink"* ]]; then
+    if [[ "$local_title" == *"毛茸茸"* ]]; then
         log_success "✓ 本地构建使用正确版本"
         return 0
     else
@@ -169,7 +169,7 @@ generate_fix_suggestions() {
     echo ""
     
     echo -e "${CYAN}验证步骤:${NC}"
-    echo "1. 检查页面标题是否为 'FurLink - 毛茸茸链接'"
+    echo "1. 检查页面标题是否为 '毛茸茸'"
     echo "2. 检查页面内容是否正常显示"
     echo "3. 检查控制台是否有JavaScript错误"
     echo ""
@@ -205,7 +205,7 @@ show_redeploy_guide() {
     
     echo -e "${BLUE}步骤4: 验证部署结果${NC}"
     echo "  访问: https://furlink-frontend-us.zeabur.app"
-    echo "  检查页面标题是否为 'FurLink - 毛茸茸链接'"
+    echo "  检查页面标题是否为 '毛茸茸'"
     echo "  检查页面内容是否正常显示"
     echo ""
     
@@ -244,7 +244,7 @@ main() {
     log_header "诊断总结"
     if [ $frontend_status -eq 2 ]; then
         log_error "确认问题: Zeabur部署的是FluLink星尘共鸣版 (错误项目)"
-        log_warning "应该部署: FurLink宠物平台 (正确项目)"
+        log_warning "应该部署: 毛茸茸宠物平台 (正确项目)"
         log_info "解决方案: 检查Zeabur源码配置，可能需要重新配置服务"
     elif [ $frontend_status -eq 0 ]; then
         log_success "前端部署正常"
