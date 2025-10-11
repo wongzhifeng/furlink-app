@@ -1,0 +1,46 @@
+# FurLink 前端Web应用 Dockerfile - 修复版
+# 宠物紧急寻回平台前端服务 - Zeabur部署优化
+
+# 构建阶段
+FROM node:18-alpine AS builder
+
+# 设置工作目录
+WORKDIR /app
+
+# 复制package文件
+COPY package*.json ./
+
+# 安装依赖
+RUN npm install
+
+# 复制源代码
+COPY . ./
+
+# 构建应用
+RUN npm run build
+
+# 生产阶段 - 使用Node.js静态服务器
+FROM node:18-alpine AS production
+
+# 安装serve包用于静态文件服务
+RUN npm install -g serve
+
+# 复制构建产物
+COPY --from=builder /app/dist /app/dist
+
+# 设置工作目录
+WORKDIR /app
+
+# 暴露端口
+EXPOSE 8080
+
+# 设置环境变量
+ENV PORT=8080
+ENV NODE_ENV=production
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1
+
+# 启动静态文件服务器
+CMD ["serve", "-s", "dist", "-l", "8080"]
