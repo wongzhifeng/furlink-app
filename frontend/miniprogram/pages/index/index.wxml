@@ -1,0 +1,61 @@
+<!--pages/index/index.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">🐾 FurLink</text>
+    <text class="subtitle">毛茸茸链接 - 宠物紧急寻回平台</text>
+  </view>
+  
+  <view class="quick-actions">
+    <view class="action-item" bindtap="goToEmergency">
+      <text class="action-icon">🚨</text>
+      <text class="action-text">紧急寻宠</text>
+      <text class="action-desc">0延迟传播</text>
+    </view>
+    
+    <view class="action-item" bindtap="goToPets">
+      <text class="action-icon">🐾</text>
+      <text class="action-text">我的宠物</text>
+      <text class="action-desc">管理档案</text>
+    </view>
+    
+    <view class="action-item" bindtap="goToServices">
+      <text class="action-icon">🏥</text>
+      <text class="action-text">附近服务</text>
+      <text class="action-desc">智能匹配</text>
+    </view>
+  </view>
+  
+  <view class="stats">
+    <view class="stat-item">
+      <text class="stat-number">{{stats.totalPets || 0}}</text>
+      <text class="stat-label">我的宠物</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-number">{{stats.activeAlerts || 0}}</text>
+      <text class="stat-label">紧急警报</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-number">{{stats.nearbyServices || 0}}</text>
+      <text class="stat-label">附近服务</text>
+    </view>
+  </view>
+  
+  <view class="recent-alerts" wx:if="{{alerts.length > 0}}">
+    <view class="section-title">🚨 最近警报</view>
+    <view class="alert-item" wx:for="{{alerts}}" wx:key="id">
+      <text class="alert-icon">🔴</text>
+      <view class="alert-info">
+        <text class="alert-pet">{{item.petName}}</text>
+        <text class="alert-location">📍 {{item.location}}</text>
+        <text class="alert-time">⏰ {{item.time}}</text>
+      </view>
+      <text class="alert-status">{{item.status}}</text>
+    </view>
+  </view>
+  
+  <view class="empty-state" wx:if="{{alerts.length === 0}}">
+    <text class="empty-icon">🐾</text>
+    <text class="empty-text">暂无紧急警报</text>
+    <text class="empty-desc">附近暂时没有宠物走失信息</text>
+  </view>
+</view>

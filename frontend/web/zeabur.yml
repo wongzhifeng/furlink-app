@@ -1,0 +1,14 @@
+# Zeabur部署配置
+# 用于部署FurLink Web前端到Zeabur平台
+
+# 构建命令
+npm run build
+
+# 启动命令
+npm run start
+
+# 端口配置
+PORT=3000
+
+# 环境变量
+NODE_ENV=production

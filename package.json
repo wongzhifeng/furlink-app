@@ -1,0 +1,45 @@
+{
+  "name": "furlink",
+  "version": "1.0.0",
+  "description": "FurLink - 毛茸茸链接，基于FluLink架构的宠物垂直社交平台",
+  "main": "backend/src/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend/miniprogram && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend/miniprogram && npm run build",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend/miniprogram && npm test",
+    "deploy": "npm run build && npm run deploy:backend && npm run deploy:frontend",
+    "deploy:backend": "cd backend && npm run deploy",
+    "deploy:frontend": "cd frontend/miniprogram && npm run deploy"
+  },
+  "keywords": [
+    "pet",
+    "social",
+    "emergency",
+    "health",
+    "miniprogram",
+    "wechat"
+  ],
+  "author": "FurLink Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/FurLink.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/FurLink/issues"
+  },
+  "homepage": "https://github.com/yourusername/FurLink#readme"
+}

@@ -1,0 +1,48 @@
+<!--pages/emergency/emergency.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">🚨 紧急寻宠</text>
+    <text class="subtitle">快速发布宠物走失信息</text>
+  </view>
+  
+  <view class="emergency-form">
+    <view class="form-group">
+      <text class="label">🐾 宠物信息</text>
+      <input class="input" placeholder="请输入宠物名称" bindinput="onPetNameInput" />
+    </view>
+    
+    <view class="form-group">
+      <text class="label">📍 走失地点</text>
+      <input class="input" placeholder="请输入走失地点" bindinput="onLocationInput" />
+    </view>
+    
+    <view class="form-group">
+      <text class="label">⏰ 走失时间</text>
+      <picker mode="date" bindchange="onDateChange">
+        <view class="picker">{{selectedDate || '请选择日期'}}</view>
+      </picker>
+    </view>
+    
+    <view class="form-group">
+      <text class="label">📞 联系方式</text>
+      <input class="input" placeholder="请输入联系电话" bindinput="onPhoneInput" />
+    </view>
+    
+    <view class="form-group">
+      <text class="label">📝 详细描述</text>
+      <textarea class="textarea" placeholder="请描述宠物的特征、走失经过等" bindinput="onDescriptionInput"></textarea>
+    </view>
+    
+    <view class="form-group">
+      <text class="label">📸 上传照片</text>
+      <view class="upload-area" bindtap="chooseImage">
+        <text class="upload-text">点击上传宠物照片</text>
+      </view>
+    </view>
+  </view>
+  
+  <view class="actions">
+    <button class="btn btn-primary" bindtap="publishAlert">🚨 发布紧急警报</button>
+    <button class="btn btn-secondary" bindtap="cancel">❌ 取消</button>
+  </view>
+</view>

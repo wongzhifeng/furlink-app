@@ -1,0 +1,48 @@
+<!--pages/services/services.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">🏥 附近服务</text>
+    <text class="subtitle">智能匹配宠物服务</text>
+  </view>
+  
+  <view class="service-types">
+    <view class="type-item" bindtap="filterServices" data-type="veterinary">
+      <text class="type-icon">🏥</text>
+      <text class="type-text">医院</text>
+    </view>
+    <view class="type-item" bindtap="filterServices" data-type="grooming">
+      <text class="type-icon">✂️</text>
+      <text class="type-text">美容</text>
+    </view>
+    <view class="type-item" bindtap="filterServices" data-type="boarding">
+      <text class="type-icon">🏠</text>
+      <text class="type-text">寄养</text>
+    </view>
+    <view class="type-item" bindtap="filterServices" data-type="training">
+      <text class="type-icon">🎓</text>
+      <text class="type-text">训练</text>
+    </view>
+  </view>
+  
+  <view class="service-list">
+    <view class="service-item" wx:for="{{services}}" wx:key="id" bindtap="viewServiceDetail" data-id="{{item.id}}">
+      <text class="service-icon">{{getServiceIcon(item.type)}}</text>
+      <view class="service-info">
+        <text class="service-name">{{item.name}}</text>
+        <text class="service-type">{{item.type}}</text>
+        <text class="service-address">📍 {{item.address}}</text>
+        <text class="service-distance">{{item.distance}}km</text>
+      </view>
+      <view class="service-rating">
+        <text class="rating-text">⭐ {{item.rating}}</text>
+        <text class="rating-count">({{item.reviewCount}})</text>
+      </view>
+    </view>
+  </view>
+  
+  <view class="empty-state" wx:if="{{services.length === 0}}">
+    <text class="empty-icon">🏥</text>
+    <text class="empty-text">暂无附近服务</text>
+    <text class="empty-desc">请检查网络连接或稍后再试</text>
+  </view>
+</view>

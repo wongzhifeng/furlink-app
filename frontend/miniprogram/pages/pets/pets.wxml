@@ -1,0 +1,27 @@
+<!--pages/pets/pets.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">🐾 我的宠物</text>
+    <button class="add-btn" bindtap="addPet">➕ 添加宠物</button>
+  </view>
+  
+  <view class="pet-list">
+    <view class="pet-item" wx:for="{{pets}}" wx:key="id" bindtap="viewPetDetail" data-id="{{item.id}}">
+      <text class="pet-avatar">{{item.avatar || '🐕'}}</text>
+      <view class="pet-info">
+        <text class="pet-name">{{item.name}}</text>
+        <text class="pet-breed">{{item.breed}}</text>
+        <text class="pet-age">{{item.age}}岁</text>
+      </view>
+      <view class="pet-status {{item.status}}">
+        <text>{{item.statusText}}</text>
+      </view>
+    </view>
+    
+    <view class="empty-state" wx:if="{{pets.length === 0}}">
+      <text class="empty-icon">🐾</text>
+      <text class="empty-text">还没有添加宠物</text>
+      <button class="empty-btn" bindtap="addPet">➕ 添加第一个宠物</button>
+    </view>
+  </view>
+</view>
