@@ -1,83 +1,47 @@
-# FurLink 后端API服务 Dockerfile - 超高性能优化版
-# 宠物紧急寻回平台后端服务 - Zeabur部署极致优化
+# FurLink 后端API服务 Dockerfile - 兼容版
+# 宠物紧急寻回平台后端服务 - Zeabur部署优化
 
-# 多阶段构建优化
-FROM node:18-alpine AS base
-
-# 安装系统依赖和工具
-RUN apk add --no-cache \
-    dumb-init \
-    curl \
-    && rm -rf /var/cache/apk/*
+# 构建阶段
+FROM node:18-alpine AS builder
 
 # 设置工作目录
 WORKDIR /app
 
-# 创建非root用户 - 安全优化
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
-
-# 复制package.json和package-lock.json
+# 复制package文件
 COPY package*.json ./
 
-# 生产依赖安装阶段
-FROM base AS deps
-RUN npm ci --only=production --no-audit --no-fund --ignore-scripts && \
-    npm cache clean --force
-
-# 开发依赖安装阶段
-FROM base AS dev-deps
-RUN npm ci --no-audit --no-fund --ignore-scripts && \
-    npm cache clean --force
-
-# 构建阶段
-FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
-COPY src/ ./src/
-
-# 代码质量检查
-RUN npm run lint || true
-
-# 生产镜像
-FROM base AS production
-
-# 复制生产依赖
-COPY --from=deps /app/node_modules ./node_modules
+# 安装依赖
+RUN npm install
 
 # 复制源代码
 COPY src/ ./src/
 
-# 复制配置文件
+# 生产阶段
+FROM node:18-alpine AS production
+
+# 设置工作目录
+WORKDIR /app
+
+# 复制package文件
 COPY package*.json ./
 
-# 更改文件所有者
-RUN chown -R nodejs:nodejs /app
-USER nodejs
+# 安装生产依赖
+RUN npm install --omit=dev
+
+# 复制源代码
+COPY src/ ./src/
 
 # 暴露端口
 EXPOSE 8080
 
-# 设置环境变量 - 性能优化
+# 设置环境变量
 ENV PORT=8080
 ENV NODE_ENV=production
 ENV NODE_OPTIONS="--max-old-space-size=400 --max-semi-space-size=64 --optimize-for-size"
-ENV NODE_ENABLE_SOURCE_MAPS=false
-ENV NODE_DISABLE_COLORS=1
 
-# 健康检查 - 超高性能版本
-# 确保服务在Zeabur上正确启动和响应
+# 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8080/api/health || exit 1
-
-# 添加性能监控标签
-LABEL maintainer="FurLink Team" \
-      version="1.0.0" \
-      description="FurLink Backend API - Ultra Performance Optimized" \
-      performance="optimized" \
-      zeabur="compatible"
-
-# 使用dumb-init作为PID 1
-ENTRYPOINT ["dumb-init", "--"]
 
 # 启动应用
 CMD ["npm", "start"]
