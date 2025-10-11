@@ -1,8 +1,31 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, Heart, Stethoscope } from 'lucide-react'
+import { AlertTriangle, Heart, Stethoscope, CheckCircle, XCircle } from 'lucide-react'
+import { checkHealth, getServiceInfo } from '../config/api'
 
 const Home: React.FC = () => {
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'connected' | 'error'>('checking')
+  const [serviceInfo, setServiceInfo] = useState<any>(null)
+
+  // 测试后端连接
+  useEffect(() => {
+    const testBackendConnection = async () => {
+      try {
+        const healthData = await checkHealth()
+        const serviceData = await getServiceInfo()
+        
+        setBackendStatus('connected')
+        setServiceInfo(serviceData)
+        console.log('✅ 后端连接成功:', { healthData, serviceData })
+      } catch (error) {
+        setBackendStatus('error')
+        console.error('❌ 后端连接失败:', error)
+      }
+    }
+
+    testBackendConnection()
+  }, [])
+
   const stats = {
     totalPets: 2,
     activeAlerts: 1,
@@ -21,6 +44,37 @@ const Home: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* 后端连接状态 */}
+      <div className="card">
+        <div className="flex items-center justify-center space-x-2 mb-2">
+          {backendStatus === 'checking' && (
+            <div className="flex items-center text-blue-600">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+              <span className="text-sm">连接后端中...</span>
+            </div>
+          )}
+          {backendStatus === 'connected' && (
+            <div className="flex items-center text-green-600">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              <span className="text-sm">后端连接成功</span>
+            </div>
+          )}
+          {backendStatus === 'error' && (
+            <div className="flex items-center text-red-600">
+              <XCircle className="h-4 w-4 mr-2" />
+              <span className="text-sm">后端连接失败</span>
+            </div>
+          )}
+        </div>
+        
+        {/* 服务信息 */}
+        {serviceInfo && (
+          <div className="text-center text-xs text-gray-500">
+            {serviceInfo.message} - {serviceInfo.version}
+          </div>
+        )}
+      </div>
+
       {/* Quick Actions */}
       <div className="grid grid-3 gap-4">
         <Link to="/emergency" className="card text-center hover:shadow-lg transition-shadow">
