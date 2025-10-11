@@ -60,7 +60,7 @@ const Profile: React.FC = () => {
               >
                 <Icon className="w-5 h-5 mr-4 text-gray-600" />
                 <span className="flex-1 text-left font-medium">{item.label}</span>
-                <span className="text-gray-400">></span>
+                <span className="text-gray-400">&gt;</span>
               </button>
             )
           })}
