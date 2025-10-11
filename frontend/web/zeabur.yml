@@ -1,32 +1,40 @@
-# Zeabur资源优化配置
-# FurLink Web前端 - 免费版优化
+# Zeabur超高性能配置 - Docker版本
+# FurLink Web前端 - 极致性能优化
 
-# 构建配置 - 优化内存使用
-build: npm ci --only=production && npm run build
-
-# 启动配置 - 轻量级预览服务器
-start: npm run preview
+# 部署类型
+type: docker
+dockerfile: ./Dockerfile
 
 # 端口配置
-port: 3000
+port: 8080
 
 # 环境变量 - 生产优化
 NODE_ENV: production
-PORT: 3000
-
-# 内存优化
-NODE_OPTIONS: --max-old-space-size=400
+PORT: 8080
+VITE_APP_VERSION: 1.0.0
+VITE_APP_BUILD_TIME: 2024-12-19T22:30:00Z
 
 # 健康检查
-healthcheck: http://localhost:3000
+healthcheck:
+  path: /health
+  port: 8080
+  interval: 30s
+  timeout: 10s
+  retries: 3
 
-# 免费版优化建议
-# 1. 内存限制512MB - 已优化构建配置
-# 2. CPU共享 - 使用轻量级预览服务器
-# 3. 带宽限制 - 压缩静态资源
-# 4. 构建时间 - 使用npm ci加速安装
+# 资源配置 - 适配免费版限制
+cpu: 0.5 # 共享CPU
+memory: 512Mi # 512MB内存限制
 
-# 监控建议
-# - 定期检查内存使用情况
-# - 避免同时运行多个重型服务
-# - 优化代码减少资源消耗
+# 部署策略
+deployment:
+  strategy: rolling-update # 零停机部署
+  minReadySeconds: 10 # 最小就绪时间
+
+# 自动缩放 (可选，免费版可能有限制)
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 1 # 免费版通常限制为1个实例
+
+# 监控和日志 (Zeabur内置)
+# 结构化日志已在应用代码中实现

@@ -1,36 +1,65 @@
-# Zeabur部署配置 - FurLink后端API服务
-# 这是一个纯后端服务，不包含前端代码
+# FurLink 后端API服务 Zeabur配置 - 标准化版本
+# 宠物紧急寻回平台后端服务 - 部署最佳实践
 
 # 服务配置
 name: furlink-backend-api
 type: docker
-
-# Dockerfile路径
 dockerfile: ./Dockerfile
 
-# 端口配置
-port: 3000
+# 端口配置 - 使用标准端口
+port: 8080
 
-# 环境变量
+# 环境变量 - 标准化配置
 env:
+  PORT: 8080
   NODE_ENV: production
-  PORT: 3000
+  NODE_OPTIONS: "--max-old-space-size=400 --max-semi-space-size=64 --optimize-for-size"
+  NODE_ENABLE_SOURCE_MAPS: false
+  NODE_DISABLE_COLORS: 1
+  
+  # 性能优化
+  PERFORMANCE_MONITORING: true
+  METRICS_ENABLED: true
+  HEALTH_CHECK_ENABLED: true
+  
+  # 安全配置
+  SECURITY_HEADERS: true
+  CORS_ENABLED: true
+  
+  # 缓存配置
+  CACHE_STRATEGY: aggressive
+  MEMORY_CACHE_TTL: 300
+  
+  # 日志配置
+  LOG_LEVEL: info
+  LOG_FORMAT: json
+  
+  # 监控配置
+  MONITORING_INTERVAL: 30
+  ALERT_THRESHOLD: 80
 
-# 健康检查
+# 资源限制 - Zeabur免费版优化
+resources:
+  memory: 512Mi
+  cpu: 500m
+  
+# 健康检查配置
 healthcheck:
   path: /api/health
   interval: 30s
   timeout: 10s
   retries: 3
+  start_period: 5s
 
-# 资源限制
-resources:
-  memory: 512Mi
-  cpu: 500m
+# 自动扩缩容配置
+autoscaling:
+  min_replicas: 1
+  max_replicas: 3
+  target_cpu_utilization: 70
+  target_memory_utilization: 80
 
-# 部署说明
-# 1. 这是一个纯后端API服务
-# 2. 不包含前端代码或vite
-# 3. 使用Node.js + Express
-# 4. 端口: 3000
-# 5. 健康检查: /api/health
+# 部署策略
+deployment:
+  strategy: RollingUpdate
+  max_unavailable: 1
+  max_surge: 1

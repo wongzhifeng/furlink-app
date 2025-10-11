@@ -1,14 +1,25 @@
 {
   "name": "furlink-backend-api",
   "version": "1.0.0",
-  "description": "FurLink 宠物紧急寻回平台后端API服务",
+  "description": "FurLink 宠物紧急寻回平台后端API服务 - 超高性能优化版",
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "start": "node --max-old-space-size=400 src/index.js",
-    "dev": "nodemon src/index.js",
+    "start": "node --max-old-space-size=400 --max-semi-space-size=64 --optimize-for-size src/index.js",
+    "dev": "nodemon --max-old-space-size=400 --watch src --ext js --exec node src/index.js",
     "test": "echo 'No tests specified'",
-    "build": "echo 'No build step required'"
+    "build": "echo 'No build step required'",
+    "health": "curl -f http://localhost:8080/api/health || exit 1",
+    "metrics": "curl -f http://localhost:8080/api/metrics || exit 1",
+    "lint": "eslint src --ext .js --fix",
+    "format": "prettier --write src/**/*.js",
+    "clean": "rm -rf node_modules package-lock.json",
+    "preinstall": "npx only-allow npm",
+    "postinstall": "npm audit --audit-level=high",
+    "docker:build": "docker build -t furlink-backend .",
+    "docker:run": "docker run -p 3000:3000 furlink-backend",
+    "docker:stop": "docker stop $(docker ps -q --filter ancestor=furlink-backend)",
+    "logs": "docker logs -f $(docker ps -q --filter ancestor=furlink-backend)"
   },
   "keywords": [
     "furlink",
@@ -17,7 +28,13 @@
     "api",
     "backend",
     "nodejs",
-    "express"
+    "express",
+    "zeabur",
+    "production",
+    "performance",
+    "optimized",
+    "docker",
+    "microservice"
   ],
   "author": "FurLink Team",
   "license": "MIT",
@@ -27,14 +44,52 @@
     "dotenv": "^17.2.3"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "eslint": "^8.37.0",
+    "prettier": "^2.8.7",
+    "only-allow": "^1.1.1"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   },
+  "os": [
+    "linux",
+    "darwin",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
   "repository": {
     "type": "git",
     "url": "https://gitee.com/hangzhou_thousand_army_wangzhifeng/furlink.git",
     "directory": "backend-standalone"
+  },
+  "homepage": "https://furlink-backend-m9k2.zeabur.app",
+  "bugs": {
+    "url": "https://gitee.com/hangzhou_thousand_army_wangzhifeng/furlink/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "FurLink Team",
+    "email": "team@furlink.com"
+  },
+  "funding": {
+    "type": "individual",
+    "url": "https://github.com/sponsors/furlink"
+  },
+  "files": [
+    "src",
+    "Dockerfile",
+    "package.json",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "private": false,
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   }
 }

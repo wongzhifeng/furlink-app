@@ -1,5 +1,5 @@
-# FurLink 后端API服务 Dockerfile - 超高性能优化版
-# 宠物紧急寻回平台后端服务 - Zeabur部署极致优化
+# FurLink 前端Web应用 Dockerfile - 超高性能优化版
+# 宠物紧急寻回平台前端服务 - Zeabur部署极致优化
 
 # 多阶段构建优化
 FROM node:18-alpine AS base
@@ -32,26 +32,38 @@ RUN npm ci --no-audit --no-fund --ignore-scripts && \
 
 # 构建阶段
 FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
-COPY src/ ./src/
+COPY --from=dev-deps /app/node_modules ./node_modules
+COPY . .
 
 # 代码质量检查
 RUN npm run lint || true
 
+# 构建应用
+RUN npm run build
+
 # 生产镜像
-FROM base AS production
+FROM nginx:alpine AS production
 
-# 复制生产依赖
-COPY --from=deps /app/node_modules ./node_modules
+# 安装curl用于健康检查
+RUN apk add --no-cache curl && \
+    rm -rf /var/cache/apk/*
 
-# 复制源代码
-COPY src/ ./src/
+# 复制构建产物
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# 复制配置文件
-COPY package*.json ./
+# 复制nginx配置
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# 创建非root用户
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
 
 # 更改文件所有者
-RUN chown -R nodejs:nodejs /app
+RUN chown -R nodejs:nodejs /usr/share/nginx/html && \
+    chown -R nodejs:nodejs /var/cache/nginx && \
+    chown -R nodejs:nodejs /var/log/nginx && \
+    chown -R nodejs:nodejs /etc/nginx/conf.d
+
 USER nodejs
 
 # 暴露端口
@@ -60,24 +72,17 @@ EXPOSE 8080
 # 设置环境变量 - 性能优化
 ENV PORT=8080
 ENV NODE_ENV=production
-ENV NODE_OPTIONS="--max-old-space-size=400 --max-semi-space-size=64 --optimize-for-size"
-ENV NODE_ENABLE_SOURCE_MAPS=false
-ENV NODE_DISABLE_COLORS=1
 
 # 健康检查 - 超高性能版本
-# 确保服务在Zeabur上正确启动和响应
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8080/api/health || exit 1
+  CMD curl -f http://localhost:8080/ || exit 1
 
 # 添加性能监控标签
 LABEL maintainer="FurLink Team" \
       version="1.0.0" \
-      description="FurLink Backend API - Ultra Performance Optimized" \
+      description="FurLink Frontend Web - Ultra Performance Optimized" \
       performance="optimized" \
       zeabur="compatible"
 
-# 使用dumb-init作为PID 1
-ENTRYPOINT ["dumb-init", "--"]
-
-# 启动应用
-CMD ["npm", "start"]
+# 启动nginx
+CMD ["nginx", "-g", "daemon off;"]
